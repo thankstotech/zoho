@@ -5,84 +5,132 @@ const redis = new Redis({
   token: process.env.KV_REST_API_TOKEN,
 });
 
-const ZOHO_CLIENT_ID = process.env.ZOHO_CLIENT_ID;
+const ZOHO_CLIENT_ID     = process.env.ZOHO_CLIENT_ID;
 const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET;
 const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN;
-const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID;
-const APP_SECRET = process.env.APP_SECRET;
+const ZOHO_ORG_ID        = process.env.ZOHO_ORG_ID;
+const APP_SECRET         = process.env.APP_SECRET;
 
-const CACHE_KEY = 'sales:cached_data';
-const CACHE_TTL = 43200;
-
-async function getAccessToken() {
-  const res = await fetch('https://accounts.zoho.in/oauth/v2/token', {
+function getAccessToken() {
+  return fetch('https://accounts.zoho.in/oauth/v2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      client_id: ZOHO_CLIENT_ID,
+      grant_type:    'refresh_token',
+      client_id:     ZOHO_CLIENT_ID,
       client_secret: ZOHO_CLIENT_SECRET,
       refresh_token: ZOHO_REFRESH_TOKEN,
     }),
+  }).then(r => r.json()).then(d => {
+    if (!d.access_token) throw new Error('Token refresh failed: ' + JSON.stringify(d));
+    return d.access_token;
   });
-  const data = await res.json();
-  if (!data.access_token) throw new Error('Token refresh failed: ' + JSON.stringify(data));
-  return data.access_token;
-}
-
-async function fetchInvoices(token, fromDate, toDate) {
-  let page = 1;
-  let allInvoices = [];
-
-  const params = new URLSearchParams({
-    organization_id: ZOHO_ORG_ID,
-    page: String(page),
-    per_page: '200',
-    sort_by: 'date',
-    sort_order: 'A',
-  });
-  if (fromDate) params.set('date_start', fromDate);
-  if (toDate) params.set('date_end', toDate);
-
-  while (true) {
-    params.set('page', String(page));
-    const res = await fetch(`https://www.zohoapis.in/books/v3/invoices?${params}`, {
-      headers: { Authorization: `Zoho-oauthtoken ${token}` },
-    });
-    const data = await res.json();
-    if (!data.invoices?.length) break;
-    allInvoices = allInvoices.concat(data.invoices);
-    if (!data.page_context?.has_more_page) break;
-    page++;
-  }
-
-  return allInvoices;
-}
-
-async function fetchInvoiceLineItems(token, invoiceId) {
-  const res = await fetch(
-    `https://www.zohoapis.in/books/v3/invoices/${invoiceId}?organization_id=${ZOHO_ORG_ID}`,
-    { headers: { Authorization: `Zoho-oauthtoken ${token}` } }
-  );
-  const data = await res.json();
-  return data.invoice?.line_items || [];
 }
 
 function checkAuth(req) {
   const auth = req.headers['x-app-token'];
   if (!auth) return null;
   try {
-    const decoded = Buffer.from(auth, 'base64').toString('utf8');
-    const payload = JSON.parse(decoded);
+    const payload = JSON.parse(Buffer.from(auth, 'base64').toString('utf8'));
     if (Date.now() - payload.iat > 86400000) return null;
     const expected = Buffer.from(
       JSON.stringify({ email: payload.email, role: payload.role, wh: payload.wh, iat: payload.iat }) + APP_SECRET
     ).toString('base64').slice(0, 16);
     if (payload.sig !== expected) return null;
     return payload;
-  } catch {
-    return null;
+  } catch { return null; }
+}
+
+function thisMonth() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  return new Date(parseInt(y), parseInt(m) - 1, 1)
+    .toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+}
+
+function invoiceDateKey(dateStr) {
+  // dateStr = "2026-03-28" → "2026-03"
+  return dateStr ? dateStr.slice(0, 7) : null;
+}
+
+// Fetch invoices for a specific month (YYYY-MM)
+async function fetchInvoicesForMonth(token, yearMonth) {
+  const [y, m] = yearMonth.split('-');
+  const from = `${y}-${m}-01`;
+  // Last day of month
+  const last = new Date(parseInt(y), parseInt(m), 0).getDate();
+  const to   = `${y}-${m}-${String(last).padStart(2, '0')}`;
+
+  const all = [];
+  let page = 1;
+
+  while (true) {
+    const res = await fetch(
+      `https://www.zohoapis.in/books/v3/invoices?organization_id=${ZOHO_ORG_ID}` +
+      `&date_from=${from}&date_to=${to}&page=${page}&per_page=200&sort_order=desc`,
+      { headers: { Authorization: `Zoho-oauthtoken ${token}` } }
+    );
+    const data = await res.json();
+    const invoices = data.invoices || [];
+    all.push(...invoices);
+    if (!data.page_context?.has_more_page) break;
+    page++;
   }
+
+  // Fetch line items in batches of 20
+  const BATCH = 20;
+  const enriched = [];
+  for (let i = 0; i < all.length; i += BATCH) {
+    const batch = all.slice(i, i + BATCH);
+    const items = await Promise.all(
+      batch.map(inv =>
+        fetch(`https://www.zohoapis.in/books/v3/invoices/${inv.invoice_id}?organization_id=${ZOHO_ORG_ID}&fields=invoice_number,date,customer_name,line_items,billing_address`, {
+          headers: { Authorization: `Zoho-oauthtoken ${token}` }
+        }).then(r => r.json()).then(d => d.invoice)
+      )
+    );
+    enriched.push(...items.filter(Boolean));
+  }
+
+  // Flatten line items
+  const rows = [];
+  for (const inv of enriched) {
+    const invDate = inv.date || '';
+    for (const li of inv.line_items || []) {
+      rows.push({
+        date:        invDate,
+        monthKey:    invoiceDateKey(invDate),
+        invoiceNo:   inv.invoice_number || '',
+        customer:    inv.customer_name || '',
+        itemName:    li.item_name || li.name || '',
+        description: li.description || '',
+        qty:         parseFloat(li.quantity) || 0,
+        unit:        li.unit || '',
+        rate:        parseFloat(li.rate) || 0,
+        amount:      parseFloat(li.amount) || 0,
+      });
+    }
+  }
+
+  return rows;
+}
+
+async function fetchAndCacheCurrentMonth(token) {
+  const key = thisMonth();
+  const rows = await fetchInvoicesForMonth(token, key);
+  // Cache for 12 hours — past months are never re-fetched
+  await redis.set(`sales:${key}`, rows, { ex: 43200 });
+  return { key, rows, source: 'fresh' };
+}
+
+async function getAllCachedMonths() {
+  const pattern = 'sales:????-??';
+  const keys = await redis.keys(pattern);
+  return keys.sort().reverse(); // newest month first
 }
 
 export default async function handler(req, res) {
@@ -94,116 +142,38 @@ export default async function handler(req, res) {
   const user = checkAuth(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
+  const curMonth = thisMonth();
+
   try {
-    const { from, to, unit } = req.query;
-    const forceRefresh = req.query.force === 'true';
-    const needsRefresh = await redis.get('sales:needs_refresh');
+    const token = await getAccessToken();
+    const cachedMonths = await getAllCachedMonths();
+    const hasCurrent = cachedMonths.includes(`sales:${curMonth}`);
 
-    const cached = await redis.get(CACHE_KEY);
-    const cacheAge = cached ? Date.now() - cached.timestamp : Infinity;
-    const cacheExpired = cacheAge > (CACHE_TTL * 1000);
+    // Always refresh current month
+    const { key: curKey, rows: curRows, source } = await fetchAndCacheCurrentMonth(token);
 
-    let rawInvoices;
+    // Load ALL cached months (current + any past months)
+    const allMonths = await getAllCachedMonths();
+    const months = await Promise.all(
+      allMonths.map(async (mk) => {
+        const data = await redis.get(`sales:${mk}`);
+        const rows = Array.isArray(data) ? data : [];
+        return {
+          key:       mk,
+          label:     monthLabel(mk),
+          isCurrent: mk === curMonth,
+          rows,
+          totalQty:  rows.reduce((s, r) => s + r.qty, 0),
+          totalAmt:  rows.reduce((s, r) => s + r.amount, 0),
+        };
+      })
+    );
 
-    if (forceRefresh || needsRefresh || !cached || cacheExpired) {
-      const token = await getAccessToken();
-      rawInvoices = await fetchInvoices(token, from, to);
-
-      // Fetch line items in batches of 20
-      const lineItems = [];
-      const BATCH_SIZE = 20;
-      for (let i = 0; i < rawInvoices.length; i += BATCH_SIZE) {
-        const batch = rawInvoices.slice(i, i + BATCH_SIZE);
-        const results = await Promise.all(
-          batch.map(inv => fetchInvoiceLineItems(token, inv.invoice_id))
-        );
-        batch.forEach((inv, idx) => {
-          (results[idx] || []).forEach((li, sNo) => {
-            lineItems.push({
-              date: inv.date,
-              invoiceId: inv.invoice_id,
-              invoiceNumber: inv.invoice_number || inv.invoice_id,
-              customerName: inv.customer_name || 'Unknown',
-              sNo: sNo + 1,
-              itemName: li.item_name || li.name || 'Unknown',
-              quantity: parseFloat(li.quantity) || 0,
-              unit: li.unit || 'NOS',
-              rate: parseFloat(li.rate) || 0,
-              amount: parseFloat(li.amount) || 0,
-              itemId: li.item_id || null,
-            });
-          });
-        });
-      }
-
-      const salesData = {
-        lineItems,
-        cachedAt: new Date().toISOString(),
-      };
-
-      await redis.set(CACHE_KEY, salesData, { ex: CACHE_TTL });
-      await redis.del('sales:needs_refresh');
-
-      rawInvoices = salesData;
-    } else {
-      rawInvoices = cached;
-    }
-
-    let lineItems = rawInvoices.lineItems || [];
-
-    // Client-side filter by unit if specified
-    if (unit && unit !== 'all') {
-      lineItems = lineItems.filter(li => li.unit.toLowerCase() === unit.toLowerCase());
-    }
-
-    // Group by unit, then date, then invoice
-    const byUnit = {};
-    lineItems.forEach(li => {
-      const u = li.unit || 'Unknown';
-      if (!byUnit[u]) byUnit[u] = [];
-      byUnit[u].push(li);
-    });
-
-    // Sort units alphabetically
-    const sortedUnits = Object.keys(byUnit).sort();
-
-    // Build grouped structure
-    const grouped = sortedUnits.map(u => {
-      const items = byUnit[u];
-      // Group by date
-      const byDate = {};
-      items.forEach(li => {
-        const d = li.date || 'Unknown';
-        if (!byDate[d]) byDate[d] = [];
-        byDate[d].push(li);
-      });
-      // Sort dates descending
-      const sortedDates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
-      const totalQty = items.reduce((s, li) => s + li.quantity, 0);
-      const totalAmount = items.reduce((s, li) => s + li.amount, 0);
-      return {
-        unit: u,
-        totalQty,
-        totalAmount,
-        dates: sortedDates.map(d => ({
-          date: d,
-          items: byDate[d].sort((a, b) => (a.invoiceNumber > b.invoiceNumber ? 1 : -1)),
-        })),
-      };
-    });
+    // If current month was already cached (fresh fetch returned same data), source = 'cache'
+    const source2 = hasCurrent ? 'cache' : source;
 
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
-    res.status(200).json({
-      groups: grouped,
-      units: sortedUnits,
-      totalQty: grouped.reduce((s, g) => s + g.totalQty, 0),
-      totalAmount: grouped.reduce((s, g) => s + g.totalAmount, 0),
-      from: from || null,
-      to: to || null,
-      filterUnit: unit || 'all',
-      cachedAt: rawInvoices.cachedAt,
-      cacheAgeMinutes: Math.round(cacheAge / 1000 / 60),
-    });
+    res.status(200).json({ months, currentMonth: curMonth, fetchedAt: new Date().toISOString(), source: source2 });
   } catch (e) {
     console.error('Sales API Error:', e);
     res.status(500).json({ error: e.message });

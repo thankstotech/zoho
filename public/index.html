@@ -219,7 +219,7 @@ table.users tr:last-child td { border-bottom: none; }
     <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Stock</div>
     <div class="nav-tab"             onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
     <div class="nav-tab"            onclick="showPage('master',this,'active-master')">Master</div>
-    <div class="nav-tab"            onclick="showPage('sales',this,'active-sales')">Sales</div>
+    <div class="nav-tab"            onclick="showPage('sales',this,'active-sales');loadSales()"><span class="nav-dot" style="background:#fb923c"></span>Sales</div>
     <div class="nav-tab"            onclick="showPage('settings',this,'active-settings')">Settings</div>
     <div class="nav-right">
       <span class="nav-sync" id="navSync"></span>
@@ -327,6 +327,21 @@ table.users tr:last-child td { border-bottom: none; }
     <div class="sales-wrap" id="salesWrap">
       <div class="state-msg"><div class="spinner"></div><br>Loading…</div>
     </div>
+  </div>
+
+
+  <!-- SALES PAGE -->
+  <div class="page" id="page-sales">
+    <div class="toolbar">
+      <div class="page-title">Sales Register</div>
+      <div class="sales-grand-total" id="salesGrandTotal" style="display:none;margin-left:auto;align-items:center;gap:16px">
+        <span style="font-family:var(--mono);font-size:12px;font-weight:600">Grand Total</span>
+        <span class="chip chip-ok" id="sGrandQty"></span>
+        <span id="sGrandAmt" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-border);font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:10px"></span>
+      </div>
+      <button class="btn-export-pdf" onclick="exportSalesPDF()">&#x2B07; Export PDF</button>
+    </div>
+    <div class="sales-wrap" id="salesWrap"><div class="state-msg"><div class="spinner"></div><br>Loading...</div></div>
   </div>
 
   <!-- SETTINGS PAGE -->
@@ -893,181 +908,67 @@ const hint=document.getElementById('dblHint');
 function showHint(e){hint.style.left=(e.clientX+12)+'px';hint.style.top=(e.clientY-28)+'px';hint.classList.add('show');}
 function hideHint(){hint.classList.remove('show');}
 
+
+let salesExpanded={};
+async function loadSales(){
+  const wrap=document.getElementById("salesWrap");
+  if(!wrap)return;
+  wrap.innerHTML='<div class="state-msg"><div class="spinner"></div><br>Loading...</div>';
+  try{
+    const res=await fetch("/api/sales",{headers:authHeaders()});
+    if(!res.ok)throw new Error("Failed to load");
+    renderSales(await res.json());
+  }catch(e){
+    if(wrap)wrap.innerHTML='<div class="state-msg">Error:'+esc(e.message)+'</div>';
+  }
+}
+function renderSales(data){
+  const wrap=document.getElementById("salesWrap"),grandEl=document.getElementById("salesGrandTotal");
+  if(!wrap||!data?.months?.length){if(wrap)wrap.innerHTML='<div class="state-msg">No sales data found</div>';if(grandEl)grandEl.style.display="none";return;}
+  const grandQty=data.months.reduce((s,m)=>s+m.totalQty,0),grandAmt=data.months.reduce((s,m)=>s+m.totalAmt,0);
+  if(grandEl){grandEl.style.display="flex";document.getElementById("sGrandQty").textContent=grandQty.toLocaleString("en-IN")+" units";document.getElementById("sGrandAmt").textContent="\u20b9"+grandAmt.toLocaleString("en-IN",{minimumFractionDigits:2});}
+  const monthUnits={};
+  for(const month of data.months){const byUnit={};for(const row of month.rows){const u=row.unit||"(no unit)";if(!byUnit[u])byUnit[u]=[];byUnit[u].push(row);}monthUnits[month.key]=byUnit;}
+  wrap.innerHTML=data.months.map(month=>{
+    const isOpen=salesExpanded[month.key]!==false,units=monthUnits[month.key]||{},unitKeys=Object.keys(units).sort();
+    const unitCards=unitKeys.map(u=>{
+      const rows=units[u],uQty=rows.reduce((s,r)=>s+r.qty,0),uAmt=rows.reduce((s,r)=>s+r.amount,0);
+      const byDate={};for(const r of rows){const dk=r.date||"";if(!byDate[dk])byDate[dk]=[];byDate[dk].push(r);}
+      let dateBlocks="";
+      for(const dk of Object.keys(byDate).sort().reverse()){
+        const di=byDate[dk],dQty=di.reduce((s,r)=>s+r.qty,0),dAmt=di.reduce((s,r)=>s+r.amount,0),dLabel=dk?new Date(dk+"T00:00:00").toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}):"—";
+        dateBlocks+='<div class="sales-date-row"><span>'+esc(dLabel)+'</span><span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted)">'+dQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+dAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>';
+        dateBlocks+='<div class="sales-grid-header"><span>Invoice</span><span>S.No</span><span>Item</span><span>Client</span><span style="text-align:center">Qty</span><span style="text-align:right">Amount</span></div>';
+        di.sort((a,b)=>a.invoiceNo<b.invoiceNo?1:-1);let sno=1;
+        for(const r of di){dateBlocks+='<div class="sales-row">'+'<span class="mono">'+esc(r.invoiceNo)+'</span>'+'<span class="mono" style="text-align:center">'+(sno++)+'</span>'+'<span>'+esc(r.itemName||r.description||"")+'</span>'+'<span>'+esc(r.customer)+'</span>'+'<span class="mono" style="text-align:center">'+r.qty.toLocaleString("en-IN")+'</span>'+'<span class="mono" style="text-align:right">\u20b9'+r.amount.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>';}
+      }
+      const cardId="su-"+month.key+"-"+u.replace(/[^a-zA-Z0-9]/g,"_");
+      return'<div class="sales-unit-card" id="'+cardId+'">'+'<div class="sales-unit-hdr" onclick="toggleUnit(\''+cardId+'')">'+'<span class="sales-unit-name">'+esc(u)+'</span>'+'<span class="sales-unit-tot">'+uQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+uAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>'+'<div class="sales-unit-body">'+dateBlocks+'</div></div>';
+    });
+    if(!unitCards.length)return"";
+    const chevron=isOpen?"\u25bc":"\u25b6";
+    return'<div class="sales-month-block">'+'<div class="sales-month-hdr" onclick="toggleMonth(\''+month.key+'')">'+'<span style="font-size:13px;font-weight:600">'+esc(month.label)+'</span>'+'<span class="sales-month-badge '+(month.isCurrent?"badge-blue":"badge-grey")+'">'+(month.isCurrent?"Current Month":"Cached")+'</span>'+'<span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">'+month.totalQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span>'+'<span style="margin-left:10px;color:var(--muted);font-size:10px" class="month-chevron">'+chevron+'</span></div>'+'<div class="sales-month-body" id="smb-'+month.key+'" style="display:'+(isOpen?"block":"none")+'">'+unitCards.join('')+'</div></div>';
+  }).join('');
+  window._salesData=data;window._salesMonthUnits=monthUnits;
+}
+function toggleMonth(key){const body=document.getElementById("smb-"+key),block=body?.closest(".sales-month-block"),chevron=block?.querySelector(".month-chevron");if(!body)return;const visible=body.style.display!=="none";body.style.display=visible?"none":"block";if(chevron)chevron.innerHTML=visible?"\u25b6":"\u25bc";salesExpanded[key]=!visible;}
+function toggleUnit(cardId){const card=document.getElementById(cardId);if(!card)return;const body=card.querySelector(".sales-unit-body"),hdr=card.querySelector(".sales-unit-hdr");if(!body||!hdr)return;const visible=body.style.display!=="none";body.style.display=visible?"none":"block";hdr.classList.toggle("collapsed",!visible);}
+function exportSalesPDF(){
+  const data=window._salesData,mu=window._salesMonthUnits;
+  if(!data||!mu){alert("Load data first");return;}
+  const{jsPDF}=window.jspdf,doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"}),pageW=doc.internal.pageSize.getWidth(),today=new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});
+  let y=14;
+  doc.setFillColor(30,41,59);doc.rect(0,0,pageW,14,"F");doc.setTextColor(255,255,255);doc.setFontSize(12);doc.setFont("helvetica","bold");doc.text("Sales Report",14,9);doc.setFontSize(8);doc.setFont("helvetica","normal");doc.text(today+"  \u00b7  All Units",pageW-14,9,{align:"right"});y=18;
+  for(const month of data.months){if(y>250){doc.addPage();y=14;}const units=mu[month.key]||{};const unitKeys=Object.keys(units).sort();doc.setFillColor(241,245,249);doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont("helvetica","bold");doc.rect(14,y,pageW-28,7,"F");doc.text(month.label,16,y+5);doc.setFont("helvetica","normal");doc.text(month.totalQty.toLocaleString("en-IN")+" units  \u00b7  \u20b9"+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2}),pageW-16,y+5,{align:"right"});y+=9;for(const u of unitKeys){if(y>265){doc.addPage();y=14;}const rows=units[u];const byDate={};for(const r of rows){const dk=r.date||"";if(!byDate[dk])byDate[dk]=[];byDate[dk].push(r);}const allRows=[];for(const dk of Object.keys(byDate).sort().reverse()){for(const r of byDate[dk]){allRows.push([r.invoiceNo,r.itemName||r.description||"",r.customer,r.qty.toLocaleString("en-IN"),"","\u20b9"+r.amount.toLocaleString("en-IN",{minimumFractionDigits:2})]);}}doc.autoTable({startY:y,head:[[u,"","","","",""]],body:allRows,margin:{left:14,right:14},styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[203,213,225],textColor:[30,41,59],fontStyle:"bold",fontSize:7},columnStyles:{0:{cellWidth:28},1:{cellWidth:50},2:{cellWidth:40},3:{cellWidth:16,halign:"center"},4:{cellWidth:0},5:{cellWidth:28,halign:"right"}},didDrawPage:()=>{y=doc.lastAutoTable.finalY+4;}});y=doc.lastAutoTable.finalY+4;}y+=4;}
+  const total=doc.internal.getNumberOfPages();for(let i=1;i<=total;i++){doc.setPage(i);doc.setFontSize(7);doc.setTextColor(180,180,180);doc.text("Sales Report  ·  "+today+"  ·  Page "+i+" of "+total,pageW/2,290,{align:"center"});}
+  doc.save("sales-report-"+today.replace(/ /g,"-")+".pdf");
+}
+
+
 // INIT
 (function init(){
   const saved=sessionStorage.getItem('stockmx_session');
   if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
   document.getElementById('loginScreen').style.display='flex';
 })();
-
-// SALES TAB
-let salesData = null;
-
-async function loadSales() {
-  const unit = document.getElementById('salesUnitFilter')?.value || 'all';
-  const from = document.getElementById('salesFrom')?.value || '';
-  const to   = document.getElementById('salesTo')?.value || '';
-  const wrap = document.getElementById('salesWrap');
-  if (!wrap) return;
-  wrap.innerHTML = '<div class="state-msg"><div class="spinner"></div><br>Loading…</div>';
-  try {
-    let url = '/api/sales?';
-    if (unit !== 'all') url += 'unit=' + encodeURIComponent(unit) + '&';
-    if (from) url += 'from=' + from + '&';
-    if (to)   url += 'to=' + to + '&';
-    const res = await fetch(url, { headers: authHeaders() });
-    if (!res.ok) throw new Error('Failed to load sales');
-    salesData = await res.json();
-    // Populate unit filter
-    const sel = document.getElementById('salesUnitFilter');
-    if (sel && salesData.units) {
-      const cur = sel.value;
-      sel.innerHTML = '<option value="all">All Units</option>' +
-        salesData.units.map(u => '<option value="' + u + '">' + u + '</option>').join('');
-      sel.value = cur || 'all';
-    }
-    renderSales(salesData);
-  } catch (e) {
-    if (wrap) wrap.innerHTML = '<div class="state-msg">Error loading sales: ' + esc(e.message) + '</div>';
-  }
-}
-
-function renderSales(data) {
-  const wrap = document.getElementById('salesWrap');
-  const grandEl = document.getElementById('salesGrandTotal');
-  if (!wrap || !data?.groups?.length) {
-    if (wrap) wrap.innerHTML = '<div class="state-msg">No sales data found</div>';
-    if (grandEl) grandEl.style.display = 'none';
-    return;
-  }
-  if (grandEl) {
-    grandEl.style.display = 'flex';
-    document.getElementById('sGrandQty').textContent = data.totalQty.toLocaleString() + ' units';
-    document.getElementById('sGrandAmt').textContent = '₹' + data.totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-  }
-  wrap.innerHTML = data.groups.map(group => {
-    const unitQty = group.totalQty.toLocaleString();
-    const unitAmt = '₹' + group.totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-    const cardId = 'uc-' + group.unit.replace(/[^a-zA-Z0-9]/g, '_');
-    let bodyHtml = '';
-    group.dates.forEach(dateGroup => {
-      const dateLabel = new Date(dateGroup.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-      const dateQty   = dateGroup.items.reduce((s,i) => s + i.quantity, 0);
-      const dateAmt   = dateGroup.items.reduce((s,i) => s + i.amount, 0);
-      bodyHtml += `
-        <div class="sales-date-row">${dateLabel}</div>
-        <div class="sales-grid-header">
-          <span>Invoice</span><span>S.No</span><span></span><span>Client</span><span style="text-align:center">Qty</span><span style="text-align:right">Amount</span>
-        </div>
-        ${dateGroup.items.map(item => `
-          <div class="sales-grid-row">
-            <span class="col-inv">${esc(item.invoiceNumber)}</span>
-            <span class="col-sno">${item.sNo}</span>
-            <span></span>
-            <span class="col-client" title="${esc(item.customerName)}">${esc(item.customerName)}</span>
-            <span class="col-qty">${item.quantity} ${esc(group.unit)}</span>
-            <span class="col-amount">₹${item.amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
-          </div>
-        `).join('')}
-        <div class="sales-date-total">
-          <span>Date Total: <strong>${dateQty} ${esc(group.unit)}</strong></span>
-          <span>Amount: <strong>₹${dateAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>
-        </div>
-      `;
-    });
-    return `
-      <div class="sales-unit-card" id="${cardId}">
-        <div class="sales-unit-header" onclick="toggleUnit('${cardId}')">
-          <span class="unit-name">▶ <strong>${esc(group.unit)}</strong> (${unitQty} units)</span>
-          <span class="unit-total">Total: ${unitAmt} <span class="chevron">▼</span></span>
-        </div>
-        <div class="sales-body">${bodyHtml}</div>
-        <div class="sales-unit-footer">
-          <span>Unit Total:</span>
-          <span>${unitQty} ${esc(group.unit)}</span>
-          <strong>${unitAmt}</strong>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function toggleUnit(cardId) {
-  const card = document.getElementById(cardId);
-  if (!card) return;
-  card.classList.toggle('collapsed');
-  const header = card.querySelector('.sales-unit-header');
-  if (header) {
-    const chevron = header.querySelector('.chevron');
-    if (chevron) {
-      chevron.textContent = card.classList.contains('collapsed') ? '▶' : '▼';
-    }
-    const nameSpan = header.querySelector('.unit-name');
-    if (nameSpan) {
-      const text = nameSpan.textContent;
-      nameSpan.textContent = card.classList.contains('collapsed')
-        ? text.replace('▼', '▶')
-        : text.replace('▶', '▼');
-    }
-  }
-}
-
-function exportSalesPDF() {
-  if (!salesData?.groups?.length) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const pageW = doc.internal.pageSize.getWidth();
-  const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-
-  let y = 14;
-  doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text('Sales Report', 14, y); y += 6;
-  doc.setFontSize(8); doc.setFont('helvetica','normal');
-  doc.setTextColor(120); doc.text(today, 14, y); y += 10;
-  doc.setTextColor(0);
-
-  const grandAmt = salesData.totalAmount;
-  doc.setFontSize(10); doc.setFont('helvetica','bold');
-  doc.text('Grand Total: ' + salesData.totalQty + ' units  |  ₹' + grandAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), 14, y);
-  y += 12;
-
-  salesData.groups.forEach(group => {
-    if (y > 250) { doc.addPage(); y = 14; }
-    doc.setFillColor(30, 41, 59);
-    doc.rect(14, y, pageW - 28, 7, 'F');
-    doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
-    doc.text(group.unit + ' — ' + group.totalQty + ' units', 17, y + 5);
-    doc.text('₹' + group.totalAmount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), pageW - 17, y + 5, { align:'right' });
-    y += 9;
-
-    const body = [];
-    group.dates.forEach(dg => {
-      dg.items.forEach(item => {
-        body.push([
-          item.invoiceNumber,
-          String(item.sNo),
-          item.customerName,
-          item.quantity + ' ' + group.unit,
-          '₹' + item.amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}),
-        ]);
-      });
-    });
-
-    doc.autoTable({
-      startY: y, head: [['Invoice','S.No','Client','Qty','Amount']], body,
-      margin: { left:14, right:14 },
-      styles: { fontSize:8, cellPadding:2.5 },
-      headStyles: { fillColor:[240,242,245], textColor:[26,31,46], fontStyle:'bold', fontSize:7 },
-      columnStyles: { 4: { halign:'right' } },
-    });
-    y = doc.lastAutoTable.finalY + 8;
-  });
-
-  const total = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= total; i++) {
-    doc.setPage(i);
-    doc.setFontSize(7); doc.setTextColor(180);
-    doc.text('Sales Report · ' + today + ' · Page ' + i + ' of ' + total, pageW/2, 290, { align:'center' });
-  }
-  doc.save('sales-report-' + today.replace(/ /g,'-') + '.pdf');
 </script>
