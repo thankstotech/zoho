@@ -546,6 +546,7 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   Object.values(grouped).forEach(arr => arr.sort((a,b) => extractSize(a.name) - extractSize(b.name)));
   uncategorised.sort((a,b) => extractSize(a.name) - extractSize(b.name));
 
+  const orderedCats = [...catOrder.filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
   const rows = [];
   for (let i = 0; i < orderedCats.length; i += 3) rows.push(orderedCats.slice(i, i+3));
 
