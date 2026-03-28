@@ -913,7 +913,7 @@ let salesExpanded={};
 async function loadSales(){
   const wrap=document.getElementById("salesWrap");
   if(!wrap)return;
-  wrap.innerHTML='<div class="state-msg"><div class="spinner"></div><br>Loading...</div>';
+  wrap.innerHTML='<div class="state-msg"><div class="spinner"></div><br>Loading…</div>';
   try{
     const res=await fetch("/api/sales",{headers:authHeaders()});
     if(!res.ok)throw new Error("Failed to load");
@@ -943,12 +943,20 @@ function renderSales(data){
         for(const r of di){dateBlocks+='<div class="sales-row">'+'<span class="mono">'+esc(r.invoiceNo)+'</span>'+'<span class="mono" style="text-align:center">'+(sno++)+'</span>'+'<span>'+esc(r.itemName||r.description||"")+'</span>'+'<span>'+esc(r.customer)+'</span>'+'<span class="mono" style="text-align:center">'+r.qty.toLocaleString("en-IN")+'</span>'+'<span class="mono" style="text-align:right">\u20b9'+r.amount.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>';}
       }
       const cardId="su-"+month.key+"-"+u.replace(/[^a-zA-Z0-9]/g,"_");
-      return'<div class="sales-unit-card" id="'+cardId+'">'+'<div class="sales-unit-hdr" onclick="toggleUnit(\''+cardId+'')">'+'<span class="sales-unit-name">'+esc(u)+'</span>'+'<span class="sales-unit-tot">'+uQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+uAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>'+'<div class="sales-unit-body">'+dateBlocks+'</div></div>';
+      return'<div class="sales-unit-card" id="'+cardId+'">'+'<div class="sales-unit-hdr" data-toggle="unit" data-id="'+cardId+'">'+'<span class="sales-unit-name">'+esc(u)+'</span>'+'<span class="sales-unit-tot">'+uQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+uAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span></div>'+'<div class="sales-unit-body">'+dateBlocks+'</div></div>';
     });
     if(!unitCards.length)return"";
     const chevron=isOpen?"\u25bc":"\u25b6";
-    return'<div class="sales-month-block">'+'<div class="sales-month-hdr" onclick="toggleMonth(\''+month.key+'')">'+'<span style="font-size:13px;font-weight:600">'+esc(month.label)+'</span>'+'<span class="sales-month-badge '+(month.isCurrent?"badge-blue":"badge-grey")+'">'+(month.isCurrent?"Current Month":"Cached")+'</span>'+'<span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">'+month.totalQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span>'+'<span style="margin-left:10px;color:var(--muted);font-size:10px" class="month-chevron">'+chevron+'</span></div>'+'<div class="sales-month-body" id="smb-'+month.key+'" style="display:'+(isOpen?"block":"none")+'">'+unitCards.join('')+'</div></div>';
+    return'<div class="sales-month-block">'+'<div class="sales-month-hdr" data-toggle="month" data-id="'+month.key+'" style="font-size:13px;font-weight:600">'+esc(month.label)+'</span>'+'<span class="sales-month-badge '+(month.isCurrent?"badge-blue":"badge-grey")+'">'+(month.isCurrent?"Current Month":"Cached")+'</span>'+'<span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">'+month.totalQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span>'+'<span style="margin-left:10px;color:var(--muted);font-size:10px" class="month-chevron">'+chevron+'</span></div>'+'<div class="sales-month-body" id="smb-'+month.key+'" style="display:'+(isOpen?"block":"none")+'">'+unitCards.join('')+'</div></div>';
   }).join('');
+  // Delegated click for sales toggles
+  document.getElementById("salesWrap").onclick = function(e){
+    const hdr=e.target.closest("[data-toggle]");
+    if(!hdr)return;
+    const id=hdr.dataset.id;
+    if(hdr.dataset.toggle==="month")toggleMonth(id);
+    else if(hdr.dataset.toggle==="unit")toggleUnit(id);
+  };
   window._salesData=data;window._salesMonthUnits=monthUnits;
 }
 function toggleMonth(key){const body=document.getElementById("smb-"+key),block=body?.closest(".sales-month-block"),chevron=block?.querySelector(".month-chevron");if(!body)return;const visible=body.style.display!=="none";body.style.display=visible?"none":"block";if(chevron)chevron.innerHTML=visible?"\u25b6":"\u25bc";salesExpanded[key]=!visible;}
@@ -972,3 +980,5 @@ function exportSalesPDF(){
   document.getElementById('loginScreen').style.display='flex';
 })();
 </script>
+</body>
+</html>
