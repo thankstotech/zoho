@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Matrix</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --bg:       #f0f2f5;
+  --surface:  #ffffff;
+  --border:   #d4d8de;
+  --border-h: #b0b6be;
+  --text:     #1a1f2e;
+  --muted:    #6b7280;
+  --faint:    #c0c6ce;
+  --head-bg:  #f8f9fa;
+  --nav-bg:   #1e293b;
+  --nav-accent: #38bdf8;
+  --green:       #166534;
+  --green-light: #dcfce7;
+  --green-border:#86efac;
+  --blue:        #1e40af;
+  --blue-light:  #dbeafe;
+  --blue-border: #93c5fd;
+  --red:         #991b1b;
+  --red-light:   #fee2e2;
+  --red-border:  #fca5a5;
+  --unknown-light:#f3f4f6;
+  --warn:   #92400e;
+  --danger: #991b1b;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; }
+
+/* LOGIN */
+#loginScreen {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
+}
+.login-box {
+  background: #fff; border: 1px solid var(--border);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  padding: 40px 36px; width: 340px; border-radius: 8px;
+}
+.login-brand {
+  font-family: var(--mono); font-size: 13px; color: var(--nav-bg); letter-spacing: 0.18em; margin-bottom: 32px;
+}
+.login-brand span { color: #0ea5e9; }
+.login-field { margin-bottom: 16px; }
+.login-field label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
+.login-field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px; outline: none; border-radius: 4px; transition: border-color 0.2s; }
+.login-field input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+.login-btn { width: 100%; background: #0ea5e9; color: #fff; border: none; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; padding: 11px; cursor: pointer; margin-top: 8px; border-radius: 4px; transition: background 0.2s; }
+.login-btn:hover { background: #0284c7; }
+.login-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.login-error { margin-top: 12px; font-family: var(--mono); font-size: 10px; color: #dc2626; text-align: center; min-height: 16px; }
+
+/* APP SHELL */
+#appShell { display: none; }
+
+/* NAV */
+nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 24px; height: 50px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.nav-brand { font-family: var(--mono); font-size: 12px; color: #fff; letter-spacing: 0.12em; margin-right: 28px; }
+.nav-brand span { color: var(--nav-accent); }
+.nav-tab { height: 50px; display: flex; align-items: center; padding: 0 14px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
+.nav-tab:hover { color: rgba(255,255,255,0.8); }
+.nav-tab.active-green   { color: #4ade80; border-bottom-color: #4ade80; }
+.nav-tab.active-blue    { color: var(--nav-accent); border-bottom-color: var(--nav-accent); }
+.nav-tab.active-master  { color: #fbbf24; border-bottom-color: #fbbf24; }
+.nav-tab.active-settings{ color: #e2e8f0; border-bottom-color: #e2e8f0; }
+.nav-dot { width:7px; height:7px; border-radius:50%; margin-right:7px; flex-shrink:0; }
+.dot-green { background:#4ade80; } .dot-blue { background:var(--nav-accent); }
+.dot-master { background:#fbbf24; } .dot-settings { background:#94a3b8; }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.nav-user  { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.35); }
+.nav-sync  { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); }
+.btn-nav { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: rgba(255,255,255,0.6); font-family: var(--mono); font-size: 10px; padding: 5px 10px; cursor: pointer; letter-spacing: 0.06em; transition: background 0.15s; }
+.btn-nav:hover { background: rgba(255,255,255,0.15); }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* TOOLBAR */
+.toolbar { padding: 10px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04); flex-wrap: wrap; }
+.page-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-right: 6px; }
+.colour-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.badge-green { background: var(--green-light); color: var(--green); }
+.badge-blue  { background: var(--blue-light);  color: var(--blue); }
+.search { min-width: 180px; max-width: 250px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--sans); font-size: 12px; padding: 6px 10px; color: var(--text); outline: none; }
+.search:focus { border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14,165,233,0.1); }
+.filter-pill { background: transparent; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-weight: 500; padding: 4px 12px; cursor: pointer; color: var(--muted); transition: all 0.15s; font-family: var(--sans); }
+.filter-pill.f-active { background: var(--text); color: #fff; border-color: var(--text); }
+.filter-pill:hover:not(.f-active) { border-color: var(--border-h); color: var(--text); }
+.stats-chips { margin-left: auto; display: flex; gap: 6px; }
+.chip { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 10px; border: 1px solid transparent; }
+.chip-ok  { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
+.chip-low { background: #fef3c7; color: var(--warn); border-color: #fcd34d; }
+.chip-out { background: var(--red-light); color: var(--danger); border-color: var(--red-border); }
+.btn-export-pdf { background: #fff; border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; color: var(--muted); display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
+.btn-export-pdf:hover { border-color: #dc2626; color: #dc2626; background: #fff5f5; }
+
+/* STOCK GRID */
+.grid-wrap { padding: 18px 24px 48px; background: var(--bg); }
+.cat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
+.cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
+.cat-header.blue-hdr { background: var(--blue); }
+.cat-header-count { font-size: 9px; opacity: 0.5; }
+.cat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cat-table thead tr { background: var(--head-bg); border-bottom: 1px solid var(--border); }
+.cat-table th { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; text-align: right; border-right: 1px solid var(--border); white-space: nowrap; }
+.cat-table th:first-child { text-align: left; }
+.cat-table th:last-child  { border-right: none; }
+.cat-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: right; font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.cat-table td:first-child { text-align: left; font-family: var(--sans); font-size: 11.5px; font-weight: 500; border-right: 1px solid var(--border-h); }
+.cat-table td:last-child  { border-right: none; }
+.cat-table tr:last-child td { border-bottom: none; }
+.cat-table tbody tr:hover td { background: #f0f7ff; }
+.qty-ok  { color: var(--green); }
+.qty-low { color: var(--warn); font-weight: 600; }
+.qty-out { color: var(--danger); font-weight: 600; }
+.col-total { font-weight: 600; background: var(--head-bg) !important; }
+.row-low td:first-child { border-left: 3px solid #f59e0b; }
+.row-out td:first-child { border-left: 3px solid #ef4444; }
+
+/* SKELETON */
+.skeleton-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 18px 24px; }
+.skeleton-block { border: 1px solid var(--border); background: var(--surface); overflow: hidden; border-radius: 6px; }
+.skeleton-hdr { height: 32px; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+.skeleton-row { height: 34px; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, #f8fafc 25%, #ffffff 50%, #f8fafc 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+.skeleton-row:last-child { border-bottom: none; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.state-msg { text-align: center; padding: 60px 20px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: #0ea5e9; border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 10px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* MASTER TABLE */
+.table-toolbar { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.colour-filter { display: flex; gap: 6px; }
+.cf-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--sans); transition: all 0.15s; user-select: none; }
+.cf-pill.active-all   { background: var(--text);         border-color: var(--text);         color: #fff; }
+.cf-pill.active-green { background: var(--green-light);  border-color: var(--green-border); color: var(--green); }
+.cf-pill.active-blue  { background: var(--blue-light);   border-color: var(--blue-border);  color: var(--blue); }
+.cf-pill.active-red   { background: var(--red-light);    border-color: var(--red-border);   color: var(--red); }
+.cf-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.table-wrap { padding: 20px 24px 48px; overflow-x: auto; background: var(--bg); }
+table.master { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); border: 1px solid var(--border); }
+table.master thead { background: var(--head-bg); }
+table.master th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+table.master th:last-child { border-right: none; }
+table.master th:hover { color: var(--text); }
+table.master th.sorted-asc::after  { content: ' ↑'; opacity: 0.5; }
+table.master th.sorted-desc::after { content: ' ↓'; opacity: 0.5; }
+table.master td { padding: 8px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; font-size: 12px; }
+table.master td:last-child  { border-right: none; }
+table.master tr:last-child td { border-bottom: none; }
+table.master tbody tr:hover td { background: #f0f7ff; }
+tr.row-uncat td { background: #fffbf0; }
+tr.row-uncat td:first-child { border-left: 3px solid #f59e0b; }
+.td-name { font-weight: 500; }
+.td-unit { color: var(--muted); font-size: 11px; }
+.td-reorder { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; }
+.cat-text { display: inline-block; font-size: 12px; color: var(--text); min-width: 60px; padding: 1px 2px; border-bottom: 1px dashed transparent; transition: border-color 0.15s; cursor: default; }
+.cat-text.undetected { color: var(--muted); font-style: italic; }
+tr:hover .cat-text { border-bottom-color: var(--faint); cursor: text; }
+.cat-input { font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); background: var(--surface); border: 1px solid #0ea5e9; border-radius: 3px; padding: 2px 6px; outline: none; width: 130px; }
+.edit-hint { font-size: 9px; color: var(--faint); margin-left: 5px; opacity: 0; transition: opacity 0.15s; font-family: var(--mono); letter-spacing: 0.06em; user-select: none; }
+tr:hover .edit-hint { opacity: 1; }
+.colour-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: opacity 0.15s; user-select: none; letter-spacing: 0.04em; }
+.colour-pill:hover { opacity: 0.75; }
+.colour-pill .cdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.pill-green   { background: var(--green-light); border-color: var(--green-border); color: var(--green); }
+.pill-blue    { background: var(--blue-light);  border-color: var(--blue-border);  color: var(--blue); }
+.pill-red     { background: var(--red-light);   border-color: var(--red-border);   color: var(--red); }
+.pill-unknown { background: var(--unknown-light); border-color: var(--border); color: var(--muted); }
+.item-count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+.btn-sm { background: var(--text); color: #fff; border: none; border-radius: 4px; font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+.btn-sm.outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.btn-sm.outline:hover { border-color: var(--border-h); color: var(--text); }
+.master-legend { display: flex; align-items: center; gap: 14px; padding: 8px 24px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 11px; color: var(--muted); flex-wrap: wrap; }
+
+/* SETTINGS */
+.settings-header { padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 12px; }
+.settings-wrap { padding: 24px; max-width: 900px; }
+.settings-section { margin-bottom: 36px; }
+.section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.cat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; }
+.cat-card { background: var(--surface); border: 1px solid var(--border); padding: 10px 12px; display: flex; align-items: center; gap: 8px; cursor: grab; user-select: none; transition: box-shadow 0.15s; border-radius: 4px; }
+.cat-card:active { cursor: grabbing; }
+.cat-card:hover  { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.cat-card.drag-over { border: 1px dashed #0ea5e9; background: #f0f9ff; }
+.drag-handle { color: var(--faint); font-size: 14px; flex-shrink: 0; }
+.cat-order   { font-family: var(--mono); font-size: 10px; color: var(--faint); width: 16px; flex-shrink: 0; }
+.cat-name-text { font-size: 12px; font-weight: 500; flex: 1; }
+.keyword-tag { font-family: var(--mono); font-size: 9px; background: var(--bg); border: 1px solid var(--border); padding: 2px 5px; color: var(--muted); border-radius: 3px; }
+.add-cat-btn { background: transparent; border: 1px dashed var(--border); padding: 10px 12px; font-size: 12px; color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s; font-family: var(--sans); border-radius: 4px; }
+.add-cat-btn:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
+table.users { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); font-size: 12px; }
+table.users th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); text-align: left; background: var(--head-bg); }
+table.users th:last-child { border-right: none; }
+table.users td { padding: 8px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; }
+table.users td:last-child { border-right: none; }
+table.users tr:last-child td { border-bottom: none; }
+.wh-badge { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); }
+.role-admin { color: var(--green); font-weight: 600; font-size: 11px; }
+.role-user  { color: var(--muted); font-size: 11px; }
+.del-btn { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 14px; }
+.del-btn:hover { color: var(--danger); }
+.new-user-row { background: #f8fafc; }
+.new-user-row td input, .new-user-row td select { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); font-size: 11px; padding: 4px 7px; color: var(--text); outline: none; width: 100%; }
+.new-user-row td input:focus, .new-user-row td select:focus { border-color: #0ea5e9; }
+.add-user-btn { background: var(--text); color: #fff; border: none; border-radius: 4px; font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
+.dbl-hint { position: fixed; background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; padding: 5px 10px; border-radius: 4px; pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.2s; letter-spacing: 0.06em; }
+.dbl-hint.show { opacity: 1; }
+@media (max-width:900px) { .cat-row { grid-template-columns: repeat(2,1fr); } .cat-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width:600px) { .cat-row { grid-template-columns: 1fr; } .stats-chips { display: none; } }
+</style>
+</head>
+<body>
+
+<div class="dbl-hint" id="dblHint">double-click to edit</div>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-brand">STOCK <span>//</span> MX</div>
+    <div class="login-field">
+      <label>Username or Email</label>
+      <input type="text" id="loginEmail" placeholder="admin" autocomplete="username" />
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell">
+
+  <nav id="mainNav">
+    <div class="nav-brand">STOCK <span>//</span> MX</div>
+    <div class="nav-tab active-green" id="tab-green"    onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Green</div>
+    <div class="nav-tab"              id="tab-blue"     onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
+    <div class="nav-tab"              id="tab-master"   onclick="showPage('master',this,'active-master')"><span class="nav-dot dot-master"></span>Master</div>
+    <div class="nav-tab"              id="tab-settings" style="display:none" onclick="showPage('settings',this,'active-settings')"><span class="nav-dot dot-settings"></span>Settings</div>
+    <div class="nav-right">
+      <span class="nav-user" id="navUser"></span>
+      <span class="nav-sync" id="navSync"></span>
+      <button class="btn-nav" onclick="loadStock()">↻ Refresh</button>
+      <button class="btn-nav" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <!-- GREEN PAGE -->
+  <div class="page active" id="page-green">
+    <div class="toolbar">
+      <div class="page-title">Stock View <span class="colour-badge badge-green">● Green</span></div>
+      <input class="search" id="search-green" placeholder="Search…" oninput="renderGreen()" />
+      <button class="filter-pill f-active" onclick="setStockFilter('green','all',this)">All</button>
+      <button class="filter-pill"          onclick="setStockFilter('green','low',this)">Low Stock</button>
+      <button class="filter-pill"          onclick="setStockFilter('green','out',this)">Out of Stock</button>
+      <button class="btn-export-pdf"       onclick="exportPDF('Green')">⬇ Export PDF</button>
+      <div class="stats-chips">
+        <span class="chip chip-ok"  id="gStat-ok"></span>
+        <span class="chip chip-low" id="gStat-low"></span>
+        <span class="chip chip-out" id="gStat-out"></span>
+      </div>
+    </div>
+    <div class="grid-wrap" id="grid-green"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
+  </div>
+
+  <!-- BLUE PAGE -->
+  <div class="page" id="page-blue">
+    <div class="toolbar">
+      <div class="page-title">Stock View <span class="colour-badge badge-blue">● Blue</span></div>
+      <input class="search" id="search-blue" placeholder="Search…" oninput="renderBlue()" />
+      <button class="filter-pill f-active" onclick="setStockFilter('blue','all',this)">All</button>
+      <button class="filter-pill"          onclick="setStockFilter('blue','low',this)">Low Stock</button>
+      <button class="filter-pill"          onclick="setStockFilter('blue','out',this)">Out of Stock</button>
+      <button class="btn-export-pdf"       onclick="exportPDF('Blue')">⬇ Export PDF</button>
+      <div class="stats-chips">
+        <span class="chip chip-ok"  id="bStat-ok"></span>
+        <span class="chip chip-low" id="bStat-low"></span>
+        <span class="chip chip-out" id="bStat-out"></span>
+      </div>
+    </div>
+    <div class="grid-wrap" id="grid-blue"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
+  </div>
+
+  <!-- MASTER PAGE -->
+  <div class="page" id="page-master">
+    <div class="table-toolbar">
+      <div class="page-title" style="margin-right:8px">Master Items</div>
+      <input class="search" id="search-master" placeholder="Search name or SKU…" oninput="renderMaster()" />
+      <div class="colour-filter">
+        <button class="cf-pill active-all" onclick="setMasterColourFilter('all',this)">All</button>
+        <button class="cf-pill"            onclick="setMasterColourFilter('Green',this)"><span class="cf-dot" style="background:var(--green)"></span>Green</button>
+        <button class="cf-pill"            onclick="setMasterColourFilter('Blue',this)"><span class="cf-dot" style="background:var(--blue)"></span>Blue</button>
+        <button class="cf-pill"            onclick="setMasterColourFilter('Red',this)"><span class="cf-dot" style="background:var(--red)"></span>Red</button>
+        <button class="cf-pill"            onclick="setMasterColourFilter('Unknown',this)">? Unknown</button>
+      </div>
+      <span class="item-count" id="masterCount"></span>
+      <button class="btn-sm outline" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div class="master-legend">
+      <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:12px;height:3px;background:#f59e0b"></span>Category not yet assigned</span>
+      <span style="color:var(--faint)">|</span>
+      <span>Double-click Category to edit</span>
+      <span style="color:var(--faint)">|</span>
+      <span>Right-click colour to copy · Left-click to paste/cycle</span>
+    </div>
+    <div class="table-wrap">
+      <table class="master" id="masterTable">
+        <thead>
+          <tr>
+            <th onclick="masterSort(0)">Category</th>
+            <th onclick="masterSort(1)">Item Name</th>
+            <th onclick="masterSort(2)">Colour</th>
+            <th onclick="masterSort(3)">Unit</th>
+            <th onclick="masterSort(4)" style="text-align:right">Reorder</th>
+            <th onclick="masterSort(5)" style="text-align:right" id="th-wh1">Warehouse 1</th>
+            <th onclick="masterSort(6)" style="text-align:right" id="th-wh2">Warehouse 2</th>
+            <th onclick="masterSort(7)" style="text-align:right">Total Stock</th>
+          </tr>
+        </thead>
+        <tbody id="masterBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="settings-header">
+      <div class="page-title">Settings</div>
+      <button class="btn-sm" onclick="saveSettings()" style="margin-left:auto">Save All</button>
+    </div>
+    <div class="settings-wrap">
+      <div class="settings-section">
+        <div class="section-title">Category Order — drag to reorder</div>
+        <div class="cat-grid" id="settingsCatGrid"></div>
+        <button class="add-cat-btn" onclick="addCategory()" style="margin-top:8px;width:100%">+ Add Category</button>
+      </div>
+      <div class="settings-section">
+        <div class="section-title">User Access</div>
+        <table class="users">
+          <thead>
+            <tr>
+              <th>Email / Username</th><th>Password</th><th>Role</th><th>Warehouse Access</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="usersBody"></tbody>
+          <tfoot>
+            <tr class="new-user-row">
+              <td><input type="text" id="nu-email" placeholder="email or username" /></td>
+              <td><input type="text" id="nu-pass"  placeholder="temp password" /></td>
+              <td><select id="nu-role"><option value="user">User</option><option value="admin">Admin</option></select></td>
+              <td><select id="nu-wh"><option value="both">Both</option><option value="A">Warehouse A</option><option value="B">Warehouse B</option></select></td>
+              <td><button class="add-user-btn" onclick="addUser()">Add User</button></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// STATE
+let session  = null;
+let allItems = [];
+let warehouses = [];
+let settings = { categoryOrder: [], itemOverrides: {} };
+let users    = [];
+let stockFilter  = { green: 'all', blue: 'all' };
+let masterColourFilter = 'all';
+let masterSortCol = -1, masterSortDir = 1;
+
+// AUTH
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn   = document.getElementById('loginBtn');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Enter username and password'; return; }
+  btn.disabled = true; btn.textContent = 'Signing in…';
+  try {
+    const res = await fetch('/api/settings?action=login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    session = data;
+    sessionStorage.setItem('stockmx_session', JSON.stringify(session));
+    startApp();
+  } catch (e) {
+    errEl.textContent = e.message;
+    btn.disabled = false; btn.textContent = 'Sign In';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('stockmx_session');
+  session = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'none';
+}
+
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// APP START
+async function startApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'block';
+  document.getElementById('navUser').textContent = session.email;
+  if (session.role === 'admin') document.getElementById('tab-settings').style.display = 'flex';
+  await Promise.all([loadSettings(), loadStock()]);
+  if (session.role === 'admin') loadUsers();
+  updateMasterWhHeaders();
+}
+
+// API
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'x-app-token': session.token };
+}
+
+function showSkeleton() {
+  const s = `<div class="skeleton-grid">${[0,1,2].map(()=>`<div class="skeleton-block"><div class="skeleton-hdr"></div>${[0,1,2,3,4].map(()=>`<div class="skeleton-row"></div>`).join('')}</div>`).join('')}</div>`;
+  if (!allItems.length) { document.getElementById('grid-green').innerHTML = s; document.getElementById('grid-blue').innerHTML = s; }
+}
+
+async function loadStock() {
+  if (allItems.length) {
+    renderGreen(); renderBlue(); renderMaster();
+    document.getElementById('navSync').textContent = 'refreshing…';
+  } else {
+    showSkeleton();
+    document.getElementById('navSync').textContent = 'loading…';
+  }
+  try {
+    const res = await fetch('/api/stock', { headers: authHeaders() });
+    if (res.status === 401) { doLogout(); return; }
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    allItems = data.items; warehouses = data.warehouses;
+    document.getElementById('navSync').textContent = 'synced ' + new Date(data.fetched_at).toLocaleTimeString();
+    renderGreen(); renderBlue(); renderMaster();
+  } catch (e) {
+    document.getElementById('navSync').textContent = 'error: ' + e.message;
+    if (!allItems.length) {
+      document.getElementById('grid-green').innerHTML = `<div class="state-msg">Failed to load. Click ↻ Refresh.</div>`;
+      document.getElementById('grid-blue').innerHTML  = `<div class="state-msg">Failed to load. Click ↻ Refresh.</div>`;
+    }
+  }
+}
+
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/settings?action=get-settings', { headers: authHeaders() });
+    settings = await res.json();
+    renderSettingsCats();
+  } catch {}
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/settings?action=get-users', { headers: authHeaders() });
+    users = await res.json();
+    renderUsers();
+  } catch {}
+}
+
+async function saveSettings() {
+  try {
+    await fetch('/api/settings?action=save-settings', { method: 'POST', headers: authHeaders(), body: JSON.stringify(settings) });
+    await fetch('/api/settings?action=save-users',    { method: 'POST', headers: authHeaders(), body: JSON.stringify({ users }) });
+    alert('Settings saved!');
+  } catch (e) { alert('Save failed: ' + e.message); }
+}
+
+// HELPERS
+const COLOURS = ['Green','Blue','Red','Unknown'];
+const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', Red:'pill-red', Unknown:'pill-unknown' };
+const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', Red:'#991b1b', Unknown:'#6b7280' };
+
+function getItemColour(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.colour || item.colour; }
+function getItemCategory(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.category !== undefined ? ov.category : item.category; }
+function getItemStatus(item) {
+  const t = item.stock_on_hand;
+  if (t <= 0) return 'out';
+  if (item.reorder_level && t <= item.reorder_level) return 'low';
+  return 'ok';
+}
+function extractSize(name) { const m = name.match(/(\d+(?:\.\d+)?)\s*mm/i); return m ? parseFloat(m[1]) : 9999; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function cleanSizeLabel(item) {
+  const catKeyword = (settings.categoryOrder?.find(c => c.name === getItemCategory(item))?.keyword) || getItemCategory(item) || '';
+  let label = item.name;
+  label = label.replace(/\b(PPRC?|PP-RC?|UPVC|CPVC|PVC|HDPE|GI|MS)\b/gi, '');
+  if (catKeyword) label = label.replace(new RegExp(catKeyword, 'gi'), '');
+  label = label.replace(/[\s\-]*[\(\[]?[GBRgbr][\)\]]?\s*$/i, '');
+  label = label.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
+  return label || item.name;
+}
+
+// STOCK GRID RENDER
+function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
+  const search = (document.getElementById(searchId)?.value || '').toLowerCase();
+  const filter = stockFilter[colour.toLowerCase()];
+
+  const items = allItems.filter(i => {
+    if (getItemColour(i) !== colour) return false;
+    const s = getItemStatus(i);
+    if (filter === 'low' && s !== 'low') return false;
+    if (filter === 'out' && s !== 'out') return false;
+    if (search && !i.name.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  document.getElementById(statOk).textContent  = `✓ ${items.filter(i=>getItemStatus(i)==='ok').length} ok`;
+  document.getElementById(statLow).textContent = `▲ ${items.filter(i=>getItemStatus(i)==='low').length} low`;
+  document.getElementById(statOut).textContent = `✕ ${items.filter(i=>getItemStatus(i)==='out').length} out`;
+
+  if (!items.length) { document.getElementById(gridId).innerHTML = `<div class="state-msg">No items found.</div>`; return; }
+
+  const catOrder = settings.categoryOrder?.map(c => c.name) || [];
+  const grouped = {}; const uncategorised = [];
+  items.forEach(item => {
+    const cat = getItemCategory(item);
+    if (!cat) { uncategorised.push(item); return; }
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+  Object.values(grouped).forEach(arr => arr.sort((a,b) => extractSize(a.name) - extractSize(b.name)));
+  uncategorised.sort((a,b) => extractSize(a.name) - extractSize(b.name));
+
+  const rows = [];
+  for (let i = 0; i < orderedCats.length; i += 3) rows.push(orderedCats.slice(i, i+3));
+
+  const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : 'cat-header';
+
+  const html = rows.map(row => `
+    <div class="cat-row">
+      ${row.map(catName => {
+        const catItems = grouped[catName];
+        const label = catName === '__uncat__' ? 'Uncategorised' : catName;
+        const whCols = warehouses.length > 0 ? warehouses : [];
+        const thCols = whCols.map(w=>`<th>${esc(w.name)}</th>`).join('') + '<th>Total</th>';
+        const trs = catItems.map(item => {
+          const status = getItemStatus(item);
+          const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
+          const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
+          const sizeLabel = cleanSizeLabel(item);
+          const whTds = whCols.map(w => {
+            const wh = item.warehouses.find(x=>x.id===w.id);
+            const qty = wh?.stock ?? 0;
+            const qc = qty<=0?'qty-out':(item.reorder_level&&qty<=item.reorder_level)?'qty-low':'qty-ok';
+            return `<td class="${qc}">${qty}</td>`;
+          }).join('');
+          return `<tr class="${rowClass}"><td>${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
+        }).join('');
+        return `<div class="cat-block">
+          <div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length} size${catItems.length!==1?'s':''}</span></div>
+          <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+
+  document.getElementById(gridId).innerHTML = html;
+}
+
+function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
+function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue', 'bStat-ok','bStat-low','bStat-out'); }
+
+function setStockFilter(colour, val, el) {
+  stockFilter[colour] = val;
+  el.closest('.toolbar').querySelectorAll('.filter-pill').forEach(b => b.classList.remove('f-active'));
+  el.classList.add('f-active');
+  if (colour === 'green') renderGreen(); else renderBlue();
+}
+
+// EXPORT PDF
+function exportPDF(colour) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+
+  // Header bar
+  doc.setFillColor(30, 41, 59);
+  doc.rect(0, 0, pageW, 18, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text(`STOCK MX — ${colour.toUpperCase()} STOCK REPORT`, 14, 12);
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.text(today, pageW - 14, 12, { align: 'right' });
+
+  const items = allItems.filter(i => getItemColour(i) === colour);
+  const catOrder = settings.categoryOrder?.map(c => c.name) || [];
+  const grouped = {};
+  items.forEach(item => {
+    const cat = getItemCategory(item) || 'Uncategorised';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(item);
+  });
+  Object.values(grouped).forEach(arr => arr.sort((a,b) => extractSize(a.name) - extractSize(b.name)));
+  const orderedCats = [...catOrder.filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
+
+  let y = 24;
+
+  orderedCats.forEach(catName => {
+    const catItems = grouped[catName];
+    if (!catItems?.length) return;
+
+    const hdrCol = colour === 'Blue' ? [30,64,175] : [30,41,59];
+    doc.setFillColor(...hdrCol);
+    doc.rect(14, y, pageW-28, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text(catName.toUpperCase(), 17, y+5);
+    doc.text(`${catItems.length} sizes`, pageW-17, y+5, { align:'right' });
+    y += 9;
+
+    const whNames = warehouses.map(w => w.name);
+    const head = [['Size', ...whNames, 'Total']];
+    const body = catItems.map(item => {
+      const whQtys = warehouses.map(w => { const wh = item.warehouses.find(x=>x.id===w.id); return String(wh?.stock??0); });
+      return [cleanSizeLabel(item), ...whQtys, String(item.stock_on_hand)];
+    });
+
+    doc.autoTable({
+      startY: y, head, body, theme: 'grid',
+      margin: { left:14, right:14 },
+      styles: { fontSize:8, cellPadding:2.5, textColor:[26,31,46] },
+      headStyles: { fillColor:[248,249,250], textColor:[107,114,128], fontStyle:'bold', fontSize:7 },
+      columnStyles: { 0: { fontStyle:'bold' }, [whNames.length+1]: { fontStyle:'bold', fillColor:[248,249,250] } },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === whNames.length+1) {
+          const item = catItems[data.row.index];
+          if (item) {
+            const s = getItemStatus(item);
+            if (s==='out') data.cell.styles.textColor=[153,27,27];
+            else if (s==='low') data.cell.styles.textColor=[146,64,14];
+            else data.cell.styles.textColor=[22,101,52];
+          }
+        }
+      },
+    });
+
+    y = doc.lastAutoTable.finalY + 6;
+    if (y > 270) { doc.addPage(); y = 14; }
+  });
+
+  // Page footers
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(180,180,180);
+    doc.text(`Stock Matrix · ${colour} Report · ${today} · Page ${i} of ${total}`, pageW/2, 290, { align:'center' });
+  }
+
+  doc.save(`stock-${colour.toLowerCase()}-${today.replace(/ /g,'-')}.pdf`);
+}
+
+// MASTER TABLE
+function renderMaster() {
+  const search = (document.getElementById('search-master')?.value || '').toLowerCase();
+  let items = allItems.filter(item => {
+    const colour = getItemColour(item);
+    if (masterColourFilter !== 'all' && colour !== masterColourFilter) return false;
+    if (search && !item.name.toLowerCase().includes(search) && !item.sku.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  if (masterSortCol >= 0) {
+    items = [...items].sort((a,b) => {
+      const vals = [
+        [getItemCategory(a),getItemCategory(b)],[a.name,b.name],[getItemColour(a),getItemColour(b)],
+        [a.unit,b.unit],[a.reorder_level,b.reorder_level],
+        [warehouses[0] ? (a.warehouses.find(x=>x.id===warehouses[0].id)?.stock??0) : 0,
+         warehouses[0] ? (b.warehouses.find(x=>x.id===warehouses[0].id)?.stock??0) : 0],
+        [warehouses[1] ? (a.warehouses.find(x=>x.id===warehouses[1].id)?.stock??0) : 0,
+         warehouses[1] ? (b.warehouses.find(x=>x.id===warehouses[1].id)?.stock??0) : 0],
+        [a.stock_on_hand,b.stock_on_hand],
+      ][masterSortCol];
+      if (vals[0]<vals[1]) return -1*masterSortDir;
+      if (vals[0]>vals[1]) return  1*masterSortDir;
+      return 0;
+    });
+  }
+
+  document.getElementById('masterCount').textContent = `${items.length} item${items.length!==1?'s':''}`;
+  document.getElementById('masterBody').innerHTML = items.map(item => {
+    const cat=getItemCategory(item), colour=getItemColour(item), status=getItemStatus(item);
+    const nocat=!cat, stockCls=status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
+    return `<tr class="${nocat?'row-uncat':''}" data-id="${item.item_id}">
+      <td class="td-cat">
+        <span class="cat-text ${nocat?'undetected':''}" ondblclick="startEditCat(this,'${item.item_id}')" onmouseenter="showHint(event)" onmouseleave="hideHint()">${esc(cat||'— assign —')}</span>
+        <span class="edit-hint">dbl-click</span>
+      </td>
+      <td class="td-name">${esc(item.name)}</td>
+      <td>
+        <span class="colour-pill ${PILL_CLASS[colour]}" onclick="cycleColour('${item.item_id}')" oncontextmenu="copyColour(event,'${colour}')">
+          <span class="cdot" style="background:${PILL_DOT[colour]}"></span>${colour}
+        </span>
+      </td>
+      <td class="td-unit">${esc(item.unit)}</td>
+      <td class="td-reorder">${item.reorder_level||'—'}</td>
+      <td class="${stockCls}" style="text-align:right">${warehouses[0] ? (item.warehouses.find(x=>x.id===warehouses[0].id)?.stock??0).toLocaleString() : '—'}</td>
+      <td class="${stockCls}" style="text-align:right">${warehouses[1] ? (item.warehouses.find(x=>x.id===warehouses[1].id)?.stock??0).toLocaleString() : '—'}</td>
+      <td class="${stockCls}" style="text-align:right;font-weight:600">${item.stock_on_hand.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+function setMasterColourFilter(colour, el) {
+  masterColourFilter = colour;
+  document.querySelectorAll('.cf-pill').forEach(p => { p.className='cf-pill'; });
+  if (colour==='all')   el.classList.add('active-all');
+  if (colour==='Green') el.classList.add('active-green');
+  if (colour==='Blue')  el.classList.add('active-blue');
+  if (colour==='Red')   el.classList.add('active-red');
+  if (colour==='Unknown') el.style.cssText='background:#f3f4f6;border-color:#9ca3af;color:#1a1f2e';
+  renderMaster();
+}
+
+function masterSort(col) {
+  masterSortDir = masterSortCol===col ? masterSortDir*-1 : 1;
+  masterSortCol = col;
+  document.querySelectorAll('table.master th').forEach((th,i) => {
+    th.classList.remove('sorted-asc','sorted-desc');
+    if (i===col) th.classList.add(masterSortDir===1?'sorted-asc':'sorted-desc');
+  });
+  renderMaster();
+}
+
+function startEditCat(spanEl, itemId) {
+  hideHint();
+  const item = allItems.find(i=>i.item_id===itemId);
+  const input = document.createElement('input');
+  input.className='cat-input'; input.value=getItemCategory(item); input.placeholder='e.g. Coupling';
+  let dl=document.getElementById('catDatalist');
+  if (!dl) {
+    dl=document.createElement('datalist'); dl.id='catDatalist';
+    (settings.categoryOrder||[]).forEach(c=>{const o=document.createElement('option');o.value=c.name;dl.appendChild(o);});
+    document.body.appendChild(dl);
+  }
+  input.setAttribute('list','catDatalist');
+  spanEl.replaceWith(input); input.focus(); input.select();
+  function commit() {
+    const val=input.value.trim();
+    if (!settings.itemOverrides) settings.itemOverrides={};
+    settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),category:val};
+    renderMaster();
+  }
+  input.addEventListener('blur',commit);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}if(e.key==='Escape')renderMaster();});
+}
+
+function cycleColour(itemId) {
+  if (!settings.itemOverrides) settings.itemOverrides={};
+  const item=allItems.find(i=>i.item_id===itemId);
+  navigator.clipboard.readText().then(text=>{
+    const pasted=text.trim();
+    if (COLOURS.includes(pasted)) {
+      settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:pasted};
+    } else {
+      const cur=getItemColour(item), next=COLOURS[(COLOURS.indexOf(cur)+1)%COLOURS.length];
+      settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:next};
+    }
+    renderMaster();
+  }).catch(()=>{
+    const cur=getItemColour(item), next=COLOURS[(COLOURS.indexOf(cur)+1)%COLOURS.length];
+    settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:next};
+    renderMaster();
+  });
+}
+
+function copyColour(e, colour) {
+  e.preventDefault();
+  navigator.clipboard.writeText(colour).then(()=>{
+    const el=e.currentTarget, orig=el.innerHTML;
+    el.textContent='✓ copied';
+    setTimeout(()=>{el.innerHTML=orig;},700);
+  });
+}
+
+// Call this after warehouses/data load so column headers reflect real names
+function updateMasterWhHeaders() {
+  const h1 = document.getElementById('th-wh1');
+  const h2 = document.getElementById('th-wh2');
+  if (h1) h1.textContent = warehouses[0] ? warehouses[0].name : 'Warehouse 1';
+  if (h2) h2.textContent = warehouses[1] ? warehouses[1].name : 'Warehouse 2';
+}
+
+function exportCSV() {
+  const wh1Name = warehouses[0] ? warehouses[0].name : 'Warehouse 1';
+  const wh2Name = warehouses[1] ? warehouses[1].name : 'Warehouse 2';
+  const rows=[['Category','Item Name','SKU','Colour','Unit','Reorder Level',wh1Name,wh2Name,'Total Stock']];
+  allItems.forEach(i=>{
+    const wh1 = warehouses[0] ? (i.warehouses.find(x=>x.id===warehouses[0].id)?.stock??0) : '—';
+    const wh2 = warehouses[1] ? (i.warehouses.find(x=>x.id===warehouses[1].id)?.stock??0) : '—';
+    rows.push([getItemCategory(i),i.name,i.sku,getItemColour(i),i.unit,i.reorder_level,wh1,wh2,i.stock_on_hand]);
+  });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download='stock-master.csv'; a.click();
+}
+
+// SETTINGS
+function renderSettingsCats() {
+  const grid=document.getElementById('settingsCatGrid'); if(!grid)return;
+  grid.innerHTML=(settings.categoryOrder||[]).map((cat,i)=>`
+    <div class="cat-card" draggable="true" data-idx="${i}">
+      <span class="drag-handle">⠿</span><span class="cat-order">${i+1}</span>
+      <span class="cat-name-text" contenteditable="true" onblur="updateCatName(${i},this.textContent)">${esc(cat.name)}</span>
+      <span class="keyword-tag">${esc(cat.keyword)}</span>
+      <button class="del-btn" onclick="deleteCat(${i})">×</button>
+    </div>`).join('');
+  initCatDrag();
+}
+
+function updateCatName(idx,val){if(settings.categoryOrder[idx])settings.categoryOrder[idx].name=val.trim();}
+function deleteCat(idx){settings.categoryOrder.splice(idx,1);renderSettingsCats();}
+function addCategory(){
+  const name=prompt('Category name (e.g. Flange):'); if(!name)return;
+  const keyword=prompt('Keyword to match in item name:',name.toLowerCase()); if(keyword===null)return;
+  settings.categoryOrder.push({name:name.trim(),keyword:keyword.trim()});
+  renderSettingsCats();
+}
+
+function initCatDrag(){
+  const grid=document.getElementById('settingsCatGrid'); let dragged=null;
+  grid.querySelectorAll('.cat-card').forEach(card=>{
+    card.addEventListener('dragstart',()=>{dragged=card;});
+    card.addEventListener('dragend',()=>{
+      grid.querySelectorAll('.cat-card').forEach(c=>c.classList.remove('drag-over'));
+      const newOrder=[...grid.querySelectorAll('.cat-card')].map(c=>settings.categoryOrder[parseInt(c.dataset.idx)]).filter(Boolean);
+      settings.categoryOrder=newOrder; renderSettingsCats();
+    });
+    card.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(card!==dragged){
+        grid.querySelectorAll('.cat-card').forEach(c=>c.classList.remove('drag-over'));
+        card.classList.add('drag-over');
+        const after=e.clientX>card.getBoundingClientRect().left+card.getBoundingClientRect().width/2;
+        grid.insertBefore(dragged,after?card.nextSibling:card);
+      }
+    });
+  });
+}
+
+function renderUsers(){
+  const tbody=document.getElementById('usersBody'); if(!tbody)return;
+  tbody.innerHTML=users.map((u,i)=>`<tr>
+    <td>${esc(u.email)}</td>
+    <td><span style="color:var(--faint);font-family:var(--mono);font-size:11px">••••••</span></td>
+    <td><span class="role-${u.role}">${u.role}</span></td>
+    <td><span class="wh-badge">${u.wh==='both'?'Both':'WH-'+u.wh}</span></td>
+    <td>${u.email==='admin'?'':`<button class="del-btn" onclick="deleteUser(${i})">×</button>`}</td>
+  </tr>`).join('');
+}
+
+function addUser(){
+  const email=document.getElementById('nu-email').value.trim();
+  const pass=document.getElementById('nu-pass').value.trim();
+  const role=document.getElementById('nu-role').value;
+  const wh=document.getElementById('nu-wh').value;
+  if(!email||!pass){alert('Email and password required');return;}
+  users.push({email,password:pass,role,wh,active:true});
+  renderUsers();
+  document.getElementById('nu-email').value='';
+  document.getElementById('nu-pass').value='';
+}
+
+function deleteUser(idx){if(!confirm(`Remove user "${users[idx].email}"?`))return;users.splice(idx,1);renderUsers();}
+
+// NAV
+function showPage(id,el,activeClass){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active-green','active-blue','active-master','active-settings'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add(activeClass);
+}
+
+// TOOLTIP
+const hint=document.getElementById('dblHint');
+function showHint(e){hint.style.left=(e.clientX+12)+'px';hint.style.top=(e.clientY-28)+'px';hint.classList.add('show');}
+function hideHint(){hint.classList.remove('show');}
+
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem('stockmx_session');
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById('loginScreen').style.display='flex';
+})();
+</script>
+</body>
+</html>
