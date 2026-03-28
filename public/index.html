@@ -72,6 +72,7 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .nav-tab.active-green   { color: #4ade80; border-bottom-color: #4ade80; }
 .nav-tab.active-blue    { color: var(--nav-accent); border-bottom-color: var(--nav-accent); }
 .nav-tab.active-master  { color: #fbbf24; border-bottom-color: #fbbf24; }
+.nav-tab.active-sales  { color: #fb923c; border-bottom-color: #fb923c; }
 .nav-tab.active-settings{ color: #e2e8f0; border-bottom-color: #e2e8f0; }
 .nav-dot { width:7px; height:7px; border-radius:50%; margin-right:7px; flex-shrink:0; }
 .dot-green { background:#4ade80; } .dot-blue { background:var(--nav-accent); }
@@ -104,41 +105,8 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .chip-out { background: var(--red-light); color: var(--danger); border-color: var(--red-border); }
 .btn-export-pdf { background: #fff; border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; color: var(--muted); display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
 .btn-export-pdf:hover { border-color: #dc2626; color: #dc2626; background: #fff5f5; }
-
-/* STOCK GRID */
-.grid-wrap { padding: 18px 24px 48px; background: var(--bg); }
-.cat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-.cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-.cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
-.cat-header.blue-hdr { background: var(--blue); }
-.cat-header-count { font-size: 9px; opacity: 0.5; }
-.cat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.cat-table thead tr { background: var(--head-bg); border-bottom: 1px solid var(--border); }
-.cat-table th { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 4px 6px; text-align: center; border-right: 1px solid var(--border); white-space: nowrap; }
-.cat-table th:first-child { text-align: left; }
-.cat-table th:last-child  { border-right: none; }
-.cat-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font-family: var(--mono); font-size: 11px; white-space: nowrap; }
-.cat-table td:first-child { text-align: left; font-family: var(--sans); font-size: 11px; font-weight: 500; border-right: 1px solid var(--border-h); }
-.cat-table td:last-child  { text-align: right; border-right: none; }
-.cat-table tr:last-child td { border-bottom: none; }
-.cat-table tbody tr:hover td { background: #f0f7ff; }
-.qty-ok  { color: var(--green); }
-.qty-low { color: var(--warn); font-weight: 600; }
-.qty-out { color: var(--danger); font-weight: 600; }
-.col-total { font-weight: 600; background: var(--head-bg) !important; }
-.row-low td:first-child { border-left: 3px solid #f59e0b; }
-.row-out td:first-child { border-left: 3px solid #ef4444; }
-
-/* SKELETON */
-.skeleton-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 18px 24px; }
-.skeleton-block { border: 1px solid var(--border); background: var(--surface); overflow: hidden; border-radius: 6px; }
-.skeleton-hdr { height: 32px; background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
-.skeleton-row { height: 34px; border-bottom: 1px solid var(--border); background: linear-gradient(90deg, #f8fafc 25%, #ffffff 50%, #f8fafc 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
-.skeleton-row:last-child { border-bottom: none; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-.state-msg { text-align: center; padding: 60px 20px; font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
-.spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: #0ea5e9; border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 10px; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.dot-sales { background:#fb923c; }
+.nav-tab.active-sales { color: #fb923c; border-bottom-color: #fb923c; }
 
 /* MASTER TABLE */
 .table-toolbar { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
@@ -248,15 +216,15 @@ table.users tr:last-child td { border-bottom: none; }
 
   <nav id="mainNav">
     <div class="nav-brand">STOCK <span>//</span> MX</div>
-    <div class="nav-tab active-green" id="tab-green"    onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Green</div>
-    <div class="nav-tab"              id="tab-blue"     onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
-    <div class="nav-tab"              id="tab-master"   onclick="showPage('master',this,'active-master')"><span class="nav-dot dot-master"></span>Master</div>
-    <div class="nav-tab"              id="tab-settings" style="display:none" onclick="showPage('settings',this,'active-settings')"><span class="nav-dot dot-settings"></span>Settings</div>
+    <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Stock</div>
+    <div class="nav-tab"             onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
+    <div class="nav-tab"            onclick="showPage('master',this,'active-master')">Master</div>
+    <div class="nav-tab"            onclick="showPage('sales',this,'active-sales')">Sales</div>
+    <div class="nav-tab"            onclick="showPage('settings',this,'active-settings')">Settings</div>
     <div class="nav-right">
-      <span class="nav-user" id="navUser"></span>
       <span class="nav-sync" id="navSync"></span>
-      <button class="btn-nav" onclick="loadStock()">↻ Refresh</button>
-      <button class="btn-nav" onclick="doLogout()">Sign out</button>
+      <span class="nav-user" id="navUser"></span>
+      <button class="btn-nav" onclick="doLogout()">Logout</button>
     </div>
   </nav>
 
@@ -334,6 +302,30 @@ table.users tr:last-child td { border-bottom: none; }
         </thead>
         <tbody id="masterBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- SALES PAGE -->
+  <div class="page" id="page-sales">
+    <div class="sales-toolbar">
+      <div class="page-title">Sales</div>
+      <span class="filter-label">Unit</span>
+      <select class="sales-filter" id="salesUnitFilter" onchange="loadSales()">
+        <option value="all">All Units</option>
+      </select>
+      <span class="filter-label">From</span>
+      <input type="date" class="sales-filter" id="salesFrom" onchange="loadSales()" />
+      <span class="filter-label">To</span>
+      <input type="date" class="sales-filter" id="salesTo" onchange="loadSales()" />
+      <button class="btn-sales-pdf" onclick="exportSalesPDF()">⬇ Export PDF</button>
+    </div>
+    <div class="sales-grand-total" id="salesGrandTotal" style="display:none">
+      <span>Total:</span>
+      <span id="sGrandQty"></span>
+      <strong id="sGrandAmt"></strong>
+    </div>
+    <div class="sales-wrap" id="salesWrap">
+      <div class="state-msg"><div class="spinner"></div><br>Loading…</div>
     </div>
   </div>
 
@@ -891,7 +883,7 @@ function deleteUser(idx){if(!confirm(`Remove user "${users[idx].email}"?`))retur
 // NAV
 function showPage(id,el,activeClass){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active-green','active-blue','active-master','active-settings'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active-green','active-blue','active-master','active-settings','active-sales'));
   document.getElementById('page-'+id).classList.add('active');
   el.classList.add(activeClass);
 }
@@ -907,6 +899,175 @@ function hideHint(){hint.classList.remove('show');}
   if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
   document.getElementById('loginScreen').style.display='flex';
 })();
+
+// SALES TAB
+let salesData = null;
+
+async function loadSales() {
+  const unit = document.getElementById('salesUnitFilter')?.value || 'all';
+  const from = document.getElementById('salesFrom')?.value || '';
+  const to   = document.getElementById('salesTo')?.value || '';
+  const wrap = document.getElementById('salesWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="state-msg"><div class="spinner"></div><br>Loading…</div>';
+  try {
+    let url = '/api/sales?';
+    if (unit !== 'all') url += 'unit=' + encodeURIComponent(unit) + '&';
+    if (from) url += 'from=' + from + '&';
+    if (to)   url += 'to=' + to + '&';
+    const res = await fetch(url, { headers: authHeaders() });
+    if (!res.ok) throw new Error('Failed to load sales');
+    salesData = await res.json();
+    // Populate unit filter
+    const sel = document.getElementById('salesUnitFilter');
+    if (sel && salesData.units) {
+      const cur = sel.value;
+      sel.innerHTML = '<option value="all">All Units</option>' +
+        salesData.units.map(u => '<option value="' + u + '">' + u + '</option>').join('');
+      sel.value = cur || 'all';
+    }
+    renderSales(salesData);
+  } catch (e) {
+    if (wrap) wrap.innerHTML = '<div class="state-msg">Error loading sales: ' + esc(e.message) + '</div>';
+  }
+}
+
+function renderSales(data) {
+  const wrap = document.getElementById('salesWrap');
+  const grandEl = document.getElementById('salesGrandTotal');
+  if (!wrap || !data?.groups?.length) {
+    if (wrap) wrap.innerHTML = '<div class="state-msg">No sales data found</div>';
+    if (grandEl) grandEl.style.display = 'none';
+    return;
+  }
+  if (grandEl) {
+    grandEl.style.display = 'flex';
+    document.getElementById('sGrandQty').textContent = data.totalQty.toLocaleString() + ' units';
+    document.getElementById('sGrandAmt').textContent = '₹' + data.totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  wrap.innerHTML = data.groups.map(group => {
+    const unitQty = group.totalQty.toLocaleString();
+    const unitAmt = '₹' + group.totalAmount.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    const cardId = 'uc-' + group.unit.replace(/[^a-zA-Z0-9]/g, '_');
+    let bodyHtml = '';
+    group.dates.forEach(dateGroup => {
+      const dateLabel = new Date(dateGroup.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+      const dateQty   = dateGroup.items.reduce((s,i) => s + i.quantity, 0);
+      const dateAmt   = dateGroup.items.reduce((s,i) => s + i.amount, 0);
+      bodyHtml += `
+        <div class="sales-date-row">${dateLabel}</div>
+        <div class="sales-grid-header">
+          <span>Invoice</span><span>S.No</span><span></span><span>Client</span><span style="text-align:center">Qty</span><span style="text-align:right">Amount</span>
+        </div>
+        ${dateGroup.items.map(item => `
+          <div class="sales-grid-row">
+            <span class="col-inv">${esc(item.invoiceNumber)}</span>
+            <span class="col-sno">${item.sNo}</span>
+            <span></span>
+            <span class="col-client" title="${esc(item.customerName)}">${esc(item.customerName)}</span>
+            <span class="col-qty">${item.quantity} ${esc(group.unit)}</span>
+            <span class="col-amount">₹${item.amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span>
+          </div>
+        `).join('')}
+        <div class="sales-date-total">
+          <span>Date Total: <strong>${dateQty} ${esc(group.unit)}</strong></span>
+          <span>Amount: <strong>₹${dateAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></span>
+        </div>
+      `;
+    });
+    return `
+      <div class="sales-unit-card" id="${cardId}">
+        <div class="sales-unit-header" onclick="toggleUnit('${cardId}')">
+          <span class="unit-name">▶ <strong>${esc(group.unit)}</strong> (${unitQty} units)</span>
+          <span class="unit-total">Total: ${unitAmt} <span class="chevron">▼</span></span>
+        </div>
+        <div class="sales-body">${bodyHtml}</div>
+        <div class="sales-unit-footer">
+          <span>Unit Total:</span>
+          <span>${unitQty} ${esc(group.unit)}</span>
+          <strong>${unitAmt}</strong>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleUnit(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  card.classList.toggle('collapsed');
+  const header = card.querySelector('.sales-unit-header');
+  if (header) {
+    const chevron = header.querySelector('.chevron');
+    if (chevron) {
+      chevron.textContent = card.classList.contains('collapsed') ? '▶' : '▼';
+    }
+    const nameSpan = header.querySelector('.unit-name');
+    if (nameSpan) {
+      const text = nameSpan.textContent;
+      nameSpan.textContent = card.classList.contains('collapsed')
+        ? text.replace('▼', '▶')
+        : text.replace('▶', '▼');
+    }
+  }
+}
+
+function exportSalesPDF() {
+  if (!salesData?.groups?.length) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
+  const today = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+
+  let y = 14;
+  doc.setFontSize(14); doc.setFont('helvetica','bold');
+  doc.text('Sales Report', 14, y); y += 6;
+  doc.setFontSize(8); doc.setFont('helvetica','normal');
+  doc.setTextColor(120); doc.text(today, 14, y); y += 10;
+  doc.setTextColor(0);
+
+  const grandAmt = salesData.totalAmount;
+  doc.setFontSize(10); doc.setFont('helvetica','bold');
+  doc.text('Grand Total: ' + salesData.totalQty + ' units  |  ₹' + grandAmt.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), 14, y);
+  y += 12;
+
+  salesData.groups.forEach(group => {
+    if (y > 250) { doc.addPage(); y = 14; }
+    doc.setFillColor(30, 41, 59);
+    doc.rect(14, y, pageW - 28, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(group.unit + ' — ' + group.totalQty + ' units', 17, y + 5);
+    doc.text('₹' + group.totalAmount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}), pageW - 17, y + 5, { align:'right' });
+    y += 9;
+
+    const body = [];
+    group.dates.forEach(dg => {
+      dg.items.forEach(item => {
+        body.push([
+          item.invoiceNumber,
+          String(item.sNo),
+          item.customerName,
+          item.quantity + ' ' + group.unit,
+          '₹' + item.amount.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}),
+        ]);
+      });
+    });
+
+    doc.autoTable({
+      startY: y, head: [['Invoice','S.No','Client','Qty','Amount']], body,
+      margin: { left:14, right:14 },
+      styles: { fontSize:8, cellPadding:2.5 },
+      headStyles: { fillColor:[240,242,245], textColor:[26,31,46], fontStyle:'bold', fontSize:7 },
+      columnStyles: { 4: { halign:'right' } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  });
+
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(180);
+    doc.text('Sales Report · ' + today + ' · Page ' + i + ' of ' + total, pageW/2, 290, { align:'center' });
+  }
+  doc.save('sales-report-' + today.replace(/ /g,'-') + '.pdf');
 </script>
-</body>
-</html>
