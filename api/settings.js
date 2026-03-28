@@ -55,11 +55,14 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  let body = {};
+  try { body = await req.json(); } catch {}
+
   const { action } = req.query;
 
   // ── LOGIN (no auth needed) ───────────────────────────────────
   if (action === 'login' && req.method === 'POST') {
-    const { email, password } = req.body;
+    const { email, password } = body;
     let users = await redis.get('app:users');
     if (!users) { users = DEFAULT_USERS; await redis.set('app:users', users); }
     const user = users.find(u =>
@@ -87,7 +90,7 @@ export default async function handler(req, res) {
   if (action === 'save-settings' && req.method === 'POST') {
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
     const current = await redis.get('app:settings') || DEFAULT_SETTINGS;
-    await redis.set('app:settings', { ...current, ...req.body });
+    await redis.set('app:settings', { ...current, ...body });
     return res.status(200).json({ ok: true });
   }
 
@@ -101,7 +104,7 @@ export default async function handler(req, res) {
   // ── SAVE USERS ────────────────────────────────────────────────
   if (action === 'save-users' && req.method === 'POST') {
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
-    const { users: newUsers } = req.body;
+    const { users: newUsers } = body;
     const existing = await redis.get('app:users') || DEFAULT_USERS;
     const merged = newUsers.map(u => {
       const prev = existing.find(e => e.email.toLowerCase() === u.email.toLowerCase());
