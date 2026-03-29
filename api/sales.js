@@ -139,12 +139,12 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'x-app-token');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const user = checkAuth(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-  const curMonth = thisMonth();
-
   try {
+    const user = checkAuth(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const curMonth = thisMonth();
+
     const token = await getAccessToken();
     const cachedMonths = await getAllCachedMonths();
     const hasCurrent = cachedMonths.includes(`sales:${curMonth}`);
@@ -156,12 +156,12 @@ export default async function handler(req, res) {
     const allMonths = await getAllCachedMonths();
     const months = await Promise.all(
       allMonths.map(async (mk) => {
-        const data = await redis.get(`sales:${mk}`);
+        const data = await redis.get(mk);
         const rows = Array.isArray(data) ? data : [];
         return {
-          key:       mk,
-          label:     monthLabel(mk),
-          isCurrent: mk === curMonth,
+          key:       mk.replace('sales:', ''),
+          label:     monthLabel(mk.replace('sales:', '')),
+          isCurrent: mk === `sales:${curMonth}`,
           rows,
           totalQty:  rows.reduce((s, r) => s + r.qty, 0),
           totalAmt:  rows.reduce((s, r) => s + r.amount, 0),
@@ -173,7 +173,12 @@ export default async function handler(req, res) {
     const source2 = hasCurrent ? 'cache' : source;
 
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
-    res.status(200).json({ months, currentMonth: curMonth, fetchedAt: new Date().toISOString(), source: source2 });
+    res.status(200).json({ 
+      months, 
+      currentMonth: curMonth, 
+      fetchedAt: new Date().toISOString(), 
+      source: source2 
+    });
   } catch (e) {
     console.error('Sales API Error:', e);
     res.status(500).json({ error: e.message });
