@@ -12,7 +12,7 @@ const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID;
 const APP_SECRET = process.env.APP_SECRET;
 
 // Cache settings
-const CACHE_TTL = 43200; // 12 hours in seconds (very long - webhook will trigger refresh)
+const CACHE_TTL = 43200; // 12 hours
 const CACHE_KEY = 'stock:cached_data';
 
 async function getAccessToken() {
@@ -116,7 +116,6 @@ async function fetchFreshStockData(token, warehouses) {
   const whMap = {};
   warehouses.forEach(w => { whMap[w.warehouse_id] = w.warehouse_name; });
 
-  // Only fetch details for active items
   const activeItems = items.filter(item => item.status === 'active');
   console.log(`Fetching fresh stock for ${activeItems.length} active items`);
 
@@ -161,10 +160,10 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const user = checkAuth(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
   try {
+    const user = checkAuth(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
     const forceRefresh = req.query.force === 'true';
     const needsRefresh = await redis.get('stock:needs_refresh');
 
@@ -173,7 +172,6 @@ export default async function handler(req, res) {
     const cacheAge = cached ? Date.now() - cached.timestamp : Infinity;
     const cacheExpired = cacheAge > (CACHE_TTL * 1000);
 
-    // Decide if we should fetch fresh data
     const shouldFetchFresh = forceRefresh || needsRefresh || !cached || cacheExpired;
 
     let stockData;
@@ -191,9 +189,7 @@ export default async function handler(req, res) {
         timestamp: Date.now(),
       };
 
-      // Store in cache with long TTL
       await redis.set(CACHE_KEY, stockData, { ex: CACHE_TTL });
-      // Clear the refresh flag
       await redis.del('stock:needs_refresh');
       console.log(`Fresh data cached: ${items.length} items`);
     } else {
@@ -222,7 +218,6 @@ export default async function handler(req, res) {
           w.name.toLowerCase().includes(userWh.toLowerCase())
         );
 
-    // Return cached data with CDN caching
     res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400');
     res.status(200).json({
       items: filtered,
