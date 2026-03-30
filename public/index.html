@@ -636,12 +636,15 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
 function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
 function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue', 'bStat-ok','bStat-low','bStat-out'); }
+function renderRM()    { renderStockPage('Raw Material', 'grid-rm', 'search-rm', 'rmStat-ok','rmStat-low','rmStat-out'); }
 
 function setStockFilter(colour, val, el) {
   stockFilter[colour] = val;
   el.closest('.toolbar').querySelectorAll('.filter-pill').forEach(b => b.classList.remove('f-active'));
   el.classList.add('f-active');
-  if (colour === 'green') renderGreen(); else renderBlue();
+  if (colour === 'green') renderGreen(); 
+  else if (colour === 'blue') renderBlue();
+  else if (colour === 'rm') renderRM();
 }
 
 // EXPORT PDF
@@ -732,7 +735,9 @@ function renderMaster() {
   let items = allItems.filter(item => {
     const colour = getItemColour(item);
     if (masterColourFilter !== 'all' && colour !== masterColourFilter) return false;
-    if (search && !item.name.toLowerCase().includes(search) && !item.sku.toLowerCase().includes(search)) return false;
+    const nameMatch = item.name && item.name.toLowerCase().includes(search);
+    const skuMatch  = item.sku && item.sku.toLowerCase().includes(search);
+    if (search && !nameMatch && !skuMatch) return false;
     return true;
   });
 
