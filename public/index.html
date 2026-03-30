@@ -120,6 +120,7 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
 .cat-header.blue-hdr { background: var(--blue); }
+.cat-header.rm-hdr   { background: var(--rm); }
 .cat-header-count { font-size: 9px; opacity: 0.5; }
 .cat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .cat-table thead tr { background: var(--head-bg); border-bottom: 1px solid var(--border); }
@@ -782,6 +783,7 @@ function setMasterColourFilter(colour, el) {
   if (colour==='all')   el.classList.add('active-all');
   if (colour==='Green') el.classList.add('active-green');
   if (colour==='Blue')  el.classList.add('active-blue');
+  if (colour==='Raw Material') el.classList.add('active-rm');
   if (colour==='Red')   el.classList.add('active-red');
   if (colour==='Unknown') el.style.cssText='background:#f3f4f6;border-color:#9ca3af;color:#1a1f2e';
   renderMaster();
