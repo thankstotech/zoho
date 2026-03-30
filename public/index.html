@@ -468,6 +468,8 @@ async function startApp() {
   await Promise.all([loadSettings(), loadStock()]);
   if (session.role === 'admin') loadUsers();
   updateMasterWhHeaders();
+  // Ensure the default landing page (Green) renders correctly with full state
+  renderGreen();
 }
 
 // API
@@ -477,12 +479,16 @@ function authHeaders() {
 
 function showSkeleton() {
   const s = `<div class="skeleton-grid">${[0,1,2].map(()=>`<div class="skeleton-block"><div class="skeleton-hdr"></div>${[0,1,2,3,4].map(()=>`<div class="skeleton-row"></div>`).join('')}</div>`).join('')}</div>`;
-  if (!allItems.length) { document.getElementById('grid-green').innerHTML = s; document.getElementById('grid-blue').innerHTML = s; }
+  if (!allItems.length) { 
+    document.getElementById('grid-green').innerHTML = s; 
+    document.getElementById('grid-blue').innerHTML = s;
+    document.getElementById('grid-rm').innerHTML = s;
+  }
 }
 
 async function loadStock() {
   if (allItems.length) {
-    renderGreen(); renderBlue(); renderMaster();
+    renderGreen(); renderBlue(); renderRM(); renderMaster();
     document.getElementById('navSync').textContent = 'refreshing…';
   } else {
     showSkeleton();
@@ -495,12 +501,14 @@ async function loadStock() {
     if (data.error) throw new Error(data.error);
     allItems = data.items; warehouses = data.warehouses;
     document.getElementById('navSync').textContent = 'synced ' + new Date(data.fetched_at).toLocaleTimeString();
-    renderGreen(); renderBlue(); renderMaster();
+    renderGreen(); renderBlue(); renderRM(); renderMaster();
   } catch (e) {
     document.getElementById('navSync').textContent = 'error: ' + e.message;
     if (!allItems.length) {
-      document.getElementById('grid-green').innerHTML = `<div class="state-msg">Failed to load. Click ↻ Refresh.</div>`;
-      document.getElementById('grid-blue').innerHTML  = `<div class="state-msg">Failed to load. Click ↻ Refresh.</div>`;
+      const msg = `<div class="state-msg">Failed to load. Click ↻ Refresh.</div>`;
+      document.getElementById('grid-green').innerHTML = msg;
+      document.getElementById('grid-blue').innerHTML  = msg;
+      document.getElementById('grid-rm').innerHTML    = msg;
     }
   }
 }
