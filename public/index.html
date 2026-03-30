@@ -984,7 +984,7 @@ function renderSalesImpl(data){
   };
   window._salesData=data;window._salesRawData=JSON.parse(JSON.stringify(data));window._salesMonthUnits=monthUnits;
   // Build unit dropdown dynamically
-  const allUnits=[...new Set(data.months.flatMap(m=>m.rows.map(r=>r.unit||'(no unit)'))].sort();
+  const allUnits=[...new Set(data.months.flatMap(m=>m.rows.map(r=>r.unit||'(no unit)')))].sort();
   const unitSel=document.getElementById('salesUnitFilter');
   if(unitSel){unitSel.innerHTML='<option value="all">All Units</option>'+allUnits.map(u=>`<option value="${escAttr(u)}">${esc(u)}</option>`).join('');}
   // Apply filters
