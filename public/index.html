@@ -145,7 +145,7 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .table-wrap { padding: 20px 24px 48px; overflow-x: auto; background: var(--bg); }
 table.master { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); border: 1px solid var(--border); }
 table.master thead { background: var(--head-bg); }
-table.master th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; text-align: left; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+table.master th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 7px 10px; text-align: left; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: normal; line-height: 1.2; cursor: pointer; user-select: none; }
 table.master th:last-child { border-right: none; }
 table.master th:hover { color: var(--text); }
 table.master th.sorted-asc::after  { content: ' ↑'; opacity: 0.5; }
@@ -302,6 +302,7 @@ table.users tr:last-child td { border-bottom: none; }
         <button class="cf-pill"            onclick="setMasterColourFilter('Unknown',this)">? Unknown</button>
       </div>
       <span class="item-count" id="masterCount"></span>
+      <button class="btn-sm" onclick="saveSettings()">Save All</button>
       <button class="btn-sm outline" onclick="exportCSV()">Export CSV</button>
     </div>
     <div class="master-legend">
@@ -319,10 +320,10 @@ table.users tr:last-child td { border-bottom: none; }
             <th onclick="masterSort(1)">Item Name</th>
             <th onclick="masterSort(2)">Colour</th>
             <th onclick="masterSort(3)">Unit</th>
-            <th onclick="masterSort(4)" style="text-align:right">Reorder</th>
-            <th onclick="masterSort(5)" style="text-align:right" id="th-wh1">Warehouse 1</th>
-            <th onclick="masterSort(6)" style="text-align:right" id="th-wh2">Warehouse 2</th>
-            <th onclick="masterSort(7)" style="text-align:right">Total Stock</th>
+            <th onclick="masterSort(4)" style="text-align:right">Reorder<br>Level</th>
+            <th onclick="masterSort(5)" style="text-align:right" id="th-wh1">Warehouse<br>1</th>
+            <th onclick="masterSort(6)" style="text-align:right" id="th-wh2">Warehouse<br>2</th>
+            <th onclick="masterSort(7)" style="text-align:right">Total<br>Stock</th>
           </tr>
         </thead>
         <tbody id="masterBody"></tbody>
