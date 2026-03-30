@@ -108,6 +108,31 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .dot-sales { background:#fb923c; }
 .nav-tab.active-sales { color: #fb923c; border-bottom-color: #fb923c; }
 
+
+/* STOCK GRID */
+.grid-wrap { padding: 18px 24px 48px; background: var(--bg); }
+.cat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+.cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
+.cat-header.blue-hdr { background: var(--blue); }
+.cat-header-count { font-size: 9px; opacity: 0.5; }
+.cat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.cat-table thead tr { background: var(--head-bg); border-bottom: 1px solid var(--border); }
+.cat-table th { font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 4px 6px; text-align: center; border-right: 1px solid var(--border); white-space: nowrap; }
+.cat-table th:first-child { text-align: left; }
+.cat-table th:last-child  { border-right: none; }
+.cat-table td { padding: 4px 6px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+.cat-table td:first-child { text-align: left; font-family: var(--sans); font-size: 11.5px; font-weight: 500; border-right: 1px solid var(--border-h); }
+.cat-table td:last-child  { border-right: none; }
+.cat-table tr:last-child td { border-bottom: none; }
+.cat-table tbody tr:hover td { background: #f0f7ff; }
+.qty-ok  { color: var(--green); }
+.qty-low { color: var(--warn); font-weight: 600; }
+.qty-out { color: var(--danger); font-weight: 600; }
+.col-total { font-weight: 600; background: var(--head-bg) !important; }
+.row-low td:first-child { border-left: 3px solid #f59e0b; }
+.row-out td:first-child { border-left: 3px solid #ef4444; }
+
 /* MASTER TABLE */
 .table-toolbar { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
 .colour-filter { display: flex; gap: 6px; }
@@ -216,7 +241,7 @@ table.users tr:last-child td { border-bottom: none; }
 
   <nav id="mainNav">
     <div class="nav-brand">STOCK <span>//</span> MX</div>
-    <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Stock</div>
+    <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Green</div>
     <div class="nav-tab"             onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
     <div class="nav-tab"            onclick="showPage('master',this,'active-master')">Master</div>
     <div class="nav-tab"            onclick="showPage('sales',this,'active-sales');loadSales()"><span class="nav-dot" style="background:#fb923c"></span>Sales</div>
