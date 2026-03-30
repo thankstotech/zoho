@@ -71,11 +71,13 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 .nav-tab:hover { color: rgba(255,255,255,0.8); }
 .nav-tab.active-green   { color: #4ade80; border-bottom-color: #4ade80; }
 .nav-tab.active-blue    { color: var(--nav-accent); border-bottom-color: var(--nav-accent); }
+.nav-tab.active-rm      { color: #a855f7; border-bottom-color: #a855f7; }
 .nav-tab.active-master  { color: #fbbf24; border-bottom-color: #fbbf24; }
 .nav-tab.active-sales  { color: #fb923c; border-bottom-color: #fb923c; }
 .nav-tab.active-settings{ color: #e2e8f0; border-bottom-color: #e2e8f0; }
 .nav-dot { width:7px; height:7px; border-radius:50%; margin-right:7px; flex-shrink:0; }
 .dot-green { background:#4ade80; } .dot-blue { background:var(--nav-accent); }
+.dot-rm { background:#a855f7; }
 .dot-master { background:#fbbf24; } .dot-settings { background:#94a3b8; }
 .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .nav-user  { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.35); }
@@ -243,6 +245,7 @@ table.users tr:last-child td { border-bottom: none; }
     <div class="nav-brand">STOCK <span>//</span> MX</div>
     <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Green</div>
     <div class="nav-tab"             onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
+    <div class="nav-tab"             onclick="showPage('rm',this,'active-rm')"><span class="nav-dot dot-rm"></span>RM</div>
     <div class="nav-tab"            onclick="showPage('master',this,'active-master')">Master</div>
     <div class="nav-tab"            onclick="showPage('sales',this,'active-sales');loadSales()"><span class="nav-dot" style="background:#fb923c"></span>Sales</div>
     <div class="nav-tab"            onclick="showPage('settings',this,'active-settings')">Settings</div>
@@ -289,6 +292,24 @@ table.users tr:last-child td { border-bottom: none; }
     <div class="grid-wrap" id="grid-blue"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
   </div>
 
+  <!-- RM PAGE -->
+  <div class="page" id="page-rm">
+    <div class="toolbar">
+      <div class="page-title">Stock View <span class="colour-badge badge-rm">● Raw Material</span></div>
+      <input class="search" id="search-rm" placeholder="Search…" oninput="renderRM()" />
+      <button class="filter-pill f-active" onclick="setStockFilter('rm','all',this)">All</button>
+      <button class="filter-pill"          onclick="setStockFilter('rm','low',this)">Low Stock</button>
+      <button class="filter-pill"          onclick="setStockFilter('rm','out',this)">Out of Stock</button>
+      <button class="btn-export-pdf"       onclick="exportPDF('Raw Material')">⬇ Export PDF</button>
+      <div class="stats-chips">
+        <span class="chip chip-ok"  id="rmStat-ok"></span>
+        <span class="chip chip-low" id="rmStat-low"></span>
+        <span class="chip chip-out" id="rmStat-out"></span>
+      </div>
+    </div>
+    <div class="grid-wrap" id="grid-rm"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
+  </div>
+
   <!-- MASTER PAGE -->
   <div class="page" id="page-master">
     <div class="table-toolbar">
@@ -298,6 +319,7 @@ table.users tr:last-child td { border-bottom: none; }
         <button class="cf-pill active-all" onclick="setMasterColourFilter('all',this)">All</button>
         <button class="cf-pill"            onclick="setMasterColourFilter('Green',this)"><span class="cf-dot" style="background:var(--green)"></span>Green</button>
         <button class="cf-pill"            onclick="setMasterColourFilter('Blue',this)"><span class="cf-dot" style="background:var(--blue)"></span>Blue</button>
+        <button class="cf-pill"            onclick="setMasterColourFilter('Raw Material',this)"><span class="cf-dot" style="background:var(--rm)"></span>RM</button>
         <button class="cf-pill"            onclick="setMasterColourFilter('Red',this)"><span class="cf-dot" style="background:var(--red)"></span>Red</button>
         <button class="cf-pill"            onclick="setMasterColourFilter('Unknown',this)">? Unknown</button>
       </div>
@@ -310,7 +332,7 @@ table.users tr:last-child td { border-bottom: none; }
       <span style="color:var(--faint)">|</span>
       <span>Double-click Category to edit</span>
       <span style="color:var(--faint)">|</span>
-      <span>Right-click colour to copy · Left-click to paste/cycle</span>
+      <span>Right-click type to copy · Left-click to paste/cycle</span>
     </div>
     <div class="table-wrap">
       <table class="master" id="masterTable">
@@ -318,7 +340,7 @@ table.users tr:last-child td { border-bottom: none; }
           <tr>
             <th onclick="masterSort(0)">Category</th>
             <th onclick="masterSort(1)">Item Name</th>
-            <th onclick="masterSort(2)">Colour</th>
+            <th onclick="masterSort(2)">Type</th>
             <th onclick="masterSort(3)">Unit</th>
             <th onclick="masterSort(4)" style="text-align:right">Reorder<br>Level</th>
             <th onclick="masterSort(5)" style="text-align:right" id="th-wh1">Warehouse<br>1</th>
@@ -399,7 +421,7 @@ let allItems = [];
 let warehouses = [];
 let settings = { categoryOrder: [], itemOverrides: {} };
 let users    = [];
-let stockFilter  = { green: 'all', blue: 'all' };
+let stockFilter  = { green: 'all', blue: 'all', rm: 'all' };
 let masterColourFilter = 'all';
 let masterSortCol = -1, masterSortDir = 1;
 
@@ -508,9 +530,9 @@ async function saveSettings() {
 }
 
 // HELPERS
-const COLOURS = ['Green','Blue','Red','Unknown'];
-const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', Red:'pill-red', Unknown:'pill-unknown' };
-const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', Red:'#991b1b', Unknown:'#6b7280' };
+const TYPES = ['Green','Blue','Raw Material','Red','Unknown'];
+const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', 'Raw Material':'pill-rm', Red:'pill-red', Unknown:'pill-unknown' };
+const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', 'Raw Material':'#a855f7', Red:'#991b1b', Unknown:'#6b7280' };
 
 function getItemColour(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.colour || item.colour; }
 function getItemCategory(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.category !== undefined ? ov.category : item.category; }
