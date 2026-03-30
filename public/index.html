@@ -329,21 +329,6 @@ table.users tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
-
-  <!-- SALES PAGE -->
-  <div class="page" id="page-sales">
-    <div class="toolbar">
-      <div class="page-title">Sales Register</div>
-      <div class="sales-grand-total" id="salesGrandTotal" style="display:none;margin-left:auto;align-items:center;gap:16px">
-        <span style="font-family:var(--mono);font-size:12px;font-weight:600">Grand Total</span>
-        <span class="chip chip-ok" id="sGrandQty"></span>
-        <span id="sGrandAmt" style="background:var(--blue-light);color:var(--blue);border:1px solid var(--blue-border);font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:10px"></span>
-      </div>
-      <button class="btn-export-pdf" onclick="exportSalesPDF()">&#x2B07; Export PDF</button>
-    </div>
-    <div class="sales-wrap" id="salesWrap"><div class="state-msg"><div class="spinner"></div><br>Loading...</div></div>
-  </div>
-
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
     <div class="settings-header">
@@ -431,7 +416,7 @@ async function startApp() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appShell').style.display = 'block';
   document.getElementById('navUser').textContent = session.email;
-  if (session.role === 'admin') document.getElementById('tab-settings').style.display = 'flex';
+  // Settings tab visibility handled by showPage
   await Promise.all([loadSettings(), loadStock()]);
   if (session.role === 'admin') loadUsers();
   updateMasterWhHeaders();
@@ -947,7 +932,7 @@ function renderSales(data){
     });
     if(!unitCards.length)return"";
     const chevron=isOpen?"\u25bc":"\u25b6";
-    return'<div class="sales-month-block">'+'<div class="sales-month-hdr" data-toggle="month" data-id="'+month.key+'" style="font-size:13px;font-weight:600">'+esc(month.label)+'</span>'+'<span class="sales-month-badge '+(month.isCurrent?"badge-blue":"badge-grey")+'">'+(month.isCurrent?"Current Month":"Cached")+'</span>'+'<span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">'+month.totalQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span>'+'<span style="margin-left:10px;color:var(--muted);font-size:10px" class="month-chevron">'+chevron+'</span></div>'+'<div class="sales-month-body" id="smb-'+month.key+'" style="display:'+(isOpen?"block":"none")+'">'+unitCards.join('')+'</div></div>';
+    return'<div class="sales-month-block">'+'<div class="sales-month-hdr" data-toggle="month" data-id="'+month.key+'" style="font-size:13px;font-weight:600">'+esc(month.label)+'</span>'+'<span class="sales-month-badge '+(month.isCurrent?"badge-blue":"badge-grey")+'">'+(month.isCurrent?"Current Month":"Cached")+'</span>'+'<span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--muted)">'+month.totalQty.toLocaleString("en-IN")+' units &nbsp;\u00b7&nbsp; \u20b9'+month.totalAmt.toLocaleString("en-IN",{minimumFractionDigits:2})+'</span>'+'<span style="margin-left:10px;color:var(--faint);font-size:10px" class="month-chevron">'+chevron+'</span></div>'+'<div class="sales-month-body" id="smb-'+month.key+'" style="display:'+(isOpen?"block":"none")+'">'+unitCards.join('')+'</div></div>';
   }).join('');
   // Delegated click for sales toggles
   document.getElementById("salesWrap").onclick = function(e){
