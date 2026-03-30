@@ -812,20 +812,9 @@ function startEditCat(spanEl, itemId) {
 function cycleColour(itemId) {
   if (!settings.itemOverrides) settings.itemOverrides={};
   const item=allItems.find(i=>i.item_id===itemId);
-  navigator.clipboard.readText().then(text=>{
-    const pasted=text.trim();
-    if (COLOURS.includes(pasted)) {
-      settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:pasted};
-    } else {
-      const cur=getItemColour(item), next=COLOURS[(COLOURS.indexOf(cur)+1)%COLOURS.length];
-      settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:next};
-    }
-    renderMaster();
-  }).catch(()=>{
-    const cur=getItemColour(item), next=COLOURS[(COLOURS.indexOf(cur)+1)%COLOURS.length];
-    settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:next};
-    renderMaster();
-  });
+  const cur=getItemColour(item), next=TYPES[(TYPES.indexOf(cur)+1)%TYPES.length];
+  settings.itemOverrides[itemId]={...(settings.itemOverrides[itemId]||{}),colour:next};
+  renderMaster();
 }
 
 function copyColour(e, colour) {
