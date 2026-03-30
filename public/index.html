@@ -819,8 +819,8 @@ function copyColour(e, colour) {
 function updateMasterWhHeaders() {
   const h1 = document.getElementById('th-wh1');
   const h2 = document.getElementById('th-wh2');
-  if (h1) h1.textContent = warehouses[0] ? warehouses[0].name : 'Warehouse 1';
-  if (h2) h2.textContent = warehouses[1] ? warehouses[1].name : 'Warehouse 2';
+  if (h1 && warehouses[0]) h1.innerHTML = warehouses[0].name.replace(/\s+/, '<br>');
+  if (h2 && warehouses[1]) h2.innerHTML = warehouses[1].name.replace(/\s+/, '<br>');
 }
 
 function exportCSV() {
