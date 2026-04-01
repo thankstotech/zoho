@@ -41,29 +41,6 @@ function checkAuth(req) {
   } catch { return null; }
 }
 
-// Extract Unit/Location from billing address
-function extractUnit(billingAddress) {
-  if (!billingAddress) return 'Unit 1'; // Default
-  
-  const addr = billingAddress.address || billingAddress.street || '';
-  const city = billingAddress.city || '';
-  const combined = `${addr} ${city}`.toUpperCase();
-  
-  // Try to detect unit from address patterns
-  // Customize these patterns based on your actual address format
-  if (combined.includes('UNIT 1') || combined.includes('U1') || combined.includes('LOCATION 1')) return 'Unit 1';
-  if (combined.includes('UNIT 2') || combined.includes('U2') || combined.includes('LOCATION 2')) return 'Unit 2';
-  if (combined.includes('UNIT 3') || combined.includes('U3') || combined.includes('LOCATION 3')) return 'Unit 3';
-  
-  // Try to match warehouse names
-  if (combined.includes('BANGALORE') || combined.includes('BENGALURU')) return 'Bangalore Unit';
-  if (combined.includes('DELHI') || combined.includes('NEW DELHI')) return 'Delhi Unit';
-  if (combined.includes('MUMBAI')) return 'Mumbai Unit';
-  if (combined.includes('CHENNAI')) return 'Chennai Unit';
-  
-  return 'Unit 1'; // Default fallback
-}
-
 // Fetch invoices for a date range
 async function fetchInvoicesForDateRange(token, fromDate, toDate) {
   const all = [];
@@ -101,55 +78,65 @@ async function fetchInvoicesForDateRange(token, fromDate, toDate) {
   return enriched;
 }
 
-// Process invoices into daily sales structure
-function processDailySales(invoices) {
-  const dailyData = {}; // { 'YYYY-MM-DD': { unit: { invoices: [...] } } }
+// Process invoices into daily structure
+function processDailyData(invoices) {
+  const dailyData = {}; // { 'YYYY-MM-DD': { date, rows[], totals } }
 
   for (const inv of invoices) {
     const date = inv.date || '';
     if (!date) continue;
 
-    const unit = extractUnit(inv.billing_address);
-    
+    const customer = inv.customer_name || '';
+    const invoiceNo = inv.invoice_number || '';
+
     // Initialize date structure
     if (!dailyData[date]) {
-      dailyData[date] = {};
+      dailyData[date] = { date, rows: [] };
     }
+
+    // Process each line item as a separate row
+    const lineItems = inv.line_items || [];
+    for (const li of lineItems) {
+      dailyData[date].rows.push({
+        invoiceNo,
+        customer,
+        itemName: li.item_name || li.name || '',
+        description: li.description || '',
+        qty: parseFloat(li.quantity) || 0,
+        unit: li.unit || 'Nos', // Default to Nos if no unit specified
+        amount: parseFloat(li.item_total) || parseFloat(li.amount) || 0,
+      });
+    }
+  }
+
+  // Calculate totals for each day
+  for (const date in dailyData) {
+    const rows = dailyData[date].rows;
     
-    // Initialize unit structure
-    if (!dailyData[date][unit]) {
-      dailyData[date][unit] = {
-        invoices: [],
-        totalQty: 0,
-        totalAmount: 0,
-      };
-    }
-
-    // Process line items
-    const lineItems = (inv.line_items || []).map((li, idx) => ({
-      sno: idx + 1,
-      itemName: li.item_name || li.name || '',
-      description: li.description || '',
-      qty: parseFloat(li.quantity) || 0,
-      unit: li.unit || '',
-      rate: parseFloat(li.rate) || 0,
-      amount: parseFloat(li.amount) || 0,
-    }));
-
-    const invoiceTotalQty = lineItems.reduce((sum, li) => sum + li.qty, 0);
-    const invoiceTotalAmount = lineItems.reduce((sum, li) => sum + li.amount, 0);
-
-    dailyData[date][unit].invoices.push({
-      invoiceNo: inv.invoice_number || '',
-      invoiceId: inv.invoice_id,
-      customer: inv.customer_name || '',
-      lineItems,
-      totalQty: invoiceTotalQty,
-      totalAmount: invoiceTotalAmount,
+    // Total amount
+    const totalAmount = rows.reduce((sum, r) => sum + r.amount, 0);
+    
+    // Qty by unit (pivot)
+    const qtyByUnit = {};
+    rows.forEach(r => {
+      const unit = r.unit || 'Nos';
+      qtyByUnit[unit] = (qtyByUnit[unit] || 0) + r.qty;
     });
+    
+    // Total qty (sum across all units)
+    const totalQty = rows.reduce((sum, r) => sum + r.qty, 0);
 
-    dailyData[date][unit].totalQty += invoiceTotalQty;
-    dailyData[date][unit].totalAmount += invoiceTotalAmount;
+    dailyData[date].totalAmount = totalAmount;
+    dailyData[date].totalQty = totalQty;
+    dailyData[date].qtyByUnit = qtyByUnit;
+    
+    // Date label
+    dailyData[date].dateLabel = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
   }
 
   return dailyData;
@@ -165,88 +152,100 @@ export default async function handler(req, res) {
     const user = checkAuth(req);
     if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
-    // Get date range from query params (default to current month)
-    const { from, to, days } = req.query;
+    const DAYS_TO_SHOW = 30; // Last 30 days
+    const today = new Date().toISOString().split('T')[0];
     
-    let fromDate, toDate;
-    
-    if (from && to) {
-      fromDate = from;
-      toDate = to;
-    } else if (days) {
-      // Last N days
-      const daysNum = parseInt(days) || 7;
-      const now = new Date();
-      toDate = now.toISOString().split('T')[0];
-      const past = new Date(now.getTime() - (daysNum * 24 * 60 * 60 * 1000));
-      fromDate = past.toISOString().split('T')[0];
-    } else {
-      // Current month by default
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      fromDate = `${year}-${month}-01`;
-      toDate = now.toISOString().split('T')[0];
+    // Generate list of dates to fetch (last 30 days)
+    const dates = [];
+    for (let i = 0; i < DAYS_TO_SHOW; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
     }
 
-    // Cache key based on date range
-    const cacheKey = `daily-sales:${fromDate}:${toDate}`;
-    
-    // Check if we need to refresh (if toDate is today, always refresh)
-    const isToday = toDate === new Date().toISOString().split('T')[0];
-    const cached = await redis.get(cacheKey);
-    
-    let dailySales;
-    let source;
+    // Check cache for each date
+    const cachedDays = {};
+    const missingDates = [];
 
-    if (!isToday && cached) {
-      // Use cache for past dates
-      dailySales = cached;
-      source = 'cache';
-    } else {
-      // Fetch fresh data
+    for (const date of dates) {
+      const cacheKey = `sales:${date}`;
+      const cached = await redis.get(cacheKey);
+
+      if (date === today) {
+        // Today: only use cache if < 30 min old
+        if (cached?.fetchedAt) {
+          const age = Date.now() - new Date(cached.fetchedAt).getTime();
+          if (age < 1800000) { // 30 minutes
+            cachedDays[date] = cached;
+          } else {
+            missingDates.push(date);
+          }
+        } else {
+          missingDates.push(date);
+        }
+      } else {
+        // Past dates: use cache if exists (cached forever)
+        if (cached) {
+          cachedDays[date] = cached;
+        } else {
+          missingDates.push(date);
+        }
+      }
+    }
+
+    // Fetch missing dates from Zoho
+    if (missingDates.length > 0) {
+      const fromDate = missingDates[missingDates.length - 1]; // Oldest
+      const toDate = missingDates[0]; // Newest
+      
       const token = await getAccessToken();
       const invoices = await fetchInvoicesForDateRange(token, fromDate, toDate);
-      dailySales = processDailySales(invoices);
-      
-      // Cache for 6 hours (today) or 24 hours (past dates)
-      const ttl = isToday ? 21600 : 86400;
-      await redis.set(cacheKey, dailySales, { ex: ttl });
-      
-      source = 'fresh';
+      const dailyData = processDailyData(invoices);
+
+      // Cache each day
+      for (const date of missingDates) {
+        const dayData = dailyData[date] || {
+          date,
+          dateLabel: new Date(date + 'T00:00:00').toLocaleDateString('en-IN', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+          }),
+          rows: [],
+          totalAmount: 0,
+          totalQty: 0,
+          qtyByUnit: {},
+        };
+
+        dayData.fetchedAt = new Date().toISOString();
+        dayData.isToday = date === today;
+
+        // Cache TTL: 30 min for today, no expiry for past dates
+        const ttl = date === today ? 1800 : 2592000; // 30 days for past (effectively permanent)
+        await redis.set(`sales:${date}`, dayData, { ex: ttl });
+        
+        cachedDays[date] = dayData;
+      }
     }
 
-    // Format response
-    const dates = Object.keys(dailySales).sort().reverse(); // Newest first
-    const formatted = dates.map(date => ({
-      date,
-      dateLabel: new Date(date).toLocaleDateString('en-IN', {
-        weekday: 'short',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }),
-      units: Object.keys(dailySales[date])
-        .sort()
-        .map(unitName => ({
-          unit: unitName,
-          ...dailySales[date][unitName],
-        })),
-      dayTotalQty: Object.values(dailySales[date]).reduce((sum, u) => sum + u.totalQty, 0),
-      dayTotalAmount: Object.values(dailySales[date]).reduce((sum, u) => sum + u.totalAmount, 0),
-    }));
+    // Build response (dates sorted newest first)
+    const days = dates
+      .map(d => cachedDays[d])
+      .filter(Boolean)
+      .map(day => ({
+        ...day,
+        isToday: day.date === today,
+      }));
 
-    res.setHeader('Cache-Control', 'public, s-maxage=1800, stale-while-revalidate=3600');
+    res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800');
     res.status(200).json({
-      dateRange: { from: fromDate, to: toDate },
-      dailySales: formatted,
-      totalDays: dates.length,
-      source,
+      days,
       fetchedAt: new Date().toISOString(),
     });
 
   } catch (e) {
-    console.error('Daily Sales API Error:', e);
+    console.error('Sales API Error:', e);
     res.status(500).json({ error: e.message });
   }
 }
