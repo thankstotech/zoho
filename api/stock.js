@@ -117,17 +117,72 @@ async function fetchFreshStockData(token, warehouses) {
   warehouses.forEach(w => { whMap[w.warehouse_id] = w.warehouse_name; });
 
   const activeItems = items.filter(item => item.status === 'active');
-  console.log(`Fetching fresh stock for ${activeItems.length} active items`);
+  console.log(`📦 Fetching fresh stock for ${activeItems.length} active items`);
 
-  // Fetch in batches of 30
+  // Fetch in batches of 30 with retry logic
   const BATCH_SIZE = 30;
+  const MAX_RETRIES = 2;
   const detailed = [];
+  const failed = [];
+
   for (let i = 0; i < activeItems.length; i += BATCH_SIZE) {
     const batch = activeItems.slice(i, i + BATCH_SIZE);
+    const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+    const totalBatches = Math.ceil(activeItems.length / BATCH_SIZE);
+    
+    console.log(`🔄 Processing batch ${batchNum}/${totalBatches} (${batch.length} items)`);
+
+    // First attempt
     const results = await Promise.all(
       batch.map(item => fetchItemDetail(token, item.item_id))
     );
-    detailed.push(...results.filter(Boolean));
+
+    // Separate successes and failures
+    results.forEach((result, idx) => {
+      if (result) {
+        detailed.push(result);
+      } else {
+        failed.push(batch[idx]);
+      }
+    });
+  }
+
+  // Retry failed items
+  if (failed.length > 0) {
+    console.log(`⚠️ ${failed.length} items failed, retrying...`);
+    
+    for (let retry = 0; retry < MAX_RETRIES; retry++) {
+      const stillFailed = [];
+      
+      for (const item of failed) {
+        await new Promise(resolve => setTimeout(resolve, 200)); // Small delay
+        const result = await fetchItemDetail(token, item.item_id);
+        
+        if (result) {
+          detailed.push(result);
+        } else {
+          stillFailed.push(item);
+        }
+      }
+      
+      if (stillFailed.length === 0) {
+        console.log(`✅ All items recovered on retry ${retry + 1}`);
+        break;
+      }
+      
+      failed.length = 0;
+      failed.push(...stillFailed);
+      
+      if (retry < MAX_RETRIES - 1) {
+        console.log(`🔄 ${stillFailed.length} still failing, retry ${retry + 2}...`);
+      }
+    }
+  }
+
+  // Final report
+  console.log(`✅ Successfully fetched ${detailed.length}/${activeItems.length} items`);
+  if (failed.length > 0) {
+    console.error(`❌ PERMANENTLY FAILED (${failed.length} items):`, failed.map(f => `${f.name} (${f.item_id})`));
   }
 
   return detailed.map(item => {
