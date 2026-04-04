@@ -497,7 +497,7 @@ nav {
 
 .cat-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 14px;
   margin-bottom: 14px;
 }
@@ -530,10 +530,11 @@ nav {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 10px 14px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 32px;
 }
 
 .combined-header {
@@ -618,8 +619,17 @@ nav {
   font-size: 11px;
   font-weight: 500;
   border-right: 1.5px solid var(--border-medium);
-  width: 78px;
-  max-width: 78px;
+  width: 83px;
+  max-width: 83px;
+}
+
+/* Warehouse columns (middle cells) - 58px width */
+.cat-table th:not(:first-child):not(:last-child),
+.comparison-table th:not(:first-child):not(:last-child),
+.cat-table td:not(:first-child):not(:last-child),
+.comparison-table td:not(:first-child):not(:last-child) {
+  width: 58px;
+  max-width: 58px;
 }
 
 .cat-table td:last-child,
@@ -1005,7 +1015,7 @@ tr:hover .cat-text {
 
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 12px;
 }
@@ -2173,8 +2183,8 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   // Build rows with 5 columns (all regular categories)
   const rows = [];
-  for (let i = 0; i < orderedCats.length; i += 5) {
-    rows.push(orderedCats.slice(i, i + 5));
+  for (let i = 0; i < orderedCats.length; i += 6) {
+    rows.push(orderedCats.slice(i, i + 6));
   }
 
   // Render all rows
@@ -2184,8 +2194,8 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
       return renderCatBlock(catName, catItems, hdrClass, thCols, whCols);
     });
     
-    // Fill empty slots if less than 5 categories
-    while (blocks.length < 5) {
+    // Fill empty slots if less than 6 categories
+    while (blocks.length < 6) {
       blocks.push('<div class="cat-block" style="visibility:hidden"></div>');
     }
     
