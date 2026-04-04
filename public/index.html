@@ -1670,14 +1670,7 @@ table.users tbody tr:hover {
       <div class="settings-section">
         <div class="section-title">Category Order — drag to reorder</div>
         <div class="cat-grid" id="settingsCatGrid"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;">
-          <button class="add-cat-btn" onclick="addCategory()">+ Add Category</button>
-          <button class="add-cat-btn" onclick="addCombinedCategory()">+ Add Combined Group</button>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="section-title">Combined Category Groups</div>
-        <div class="combined-groups-list" id="combinedGroupsList"></div>
+        <button class="add-cat-btn" onclick="addCategory()" style="margin-top:12px;width:100%">+ Add Category</button>
       </div>
       <div class="settings-section">
         <div class="section-title">User Access</div>
@@ -1932,7 +1925,32 @@ function getItemColour(item) {
 
 function getItemCategory(item) {
   const ov = settings.itemOverrides?.[item.item_id];
-  return ov?.category !== undefined ? ov.category : item.category;
+  // Return manual override if set
+  if (ov?.category !== undefined) return ov.category;
+  
+  // If item already has a category assigned, use it
+  if (item.category) return item.category;
+  
+  // Auto-categorize pipe items by layer and pressure
+  if (isPipeItem(item)) {
+    const name = item.name || '';
+    const layer = extractPipeLayer(name);
+    
+    // Extract pressure rating (PN10, PN16, PN20, PN25, PN08, PN12.5)
+    const pressureMatch = name.match(/\bPN(\d+(?:\.\d+)?)\b/i);
+    if (pressureMatch) {
+      const pressure = 'PN' + pressureMatch[1];
+      
+      if (layer === 'SINGLE') {
+        return pressure + ' (Single)';
+      } else if (layer === 'TRIPLE') {
+        return pressure;
+      }
+    }
+  }
+  
+  // No category assigned
+  return null;
 }
 
 function getItemStatus(item) {
@@ -2024,21 +2042,40 @@ function getPipeSortOrder(name) {
 
 function getPipeDisplayLabel(item) {
   const name = item.name || '';
-  const layer = extractPipeLayer(name);
   const size = extractPipeSize(name);
   
-  if (!layer || !size) {
-    // Not a pipe item, use regular cleaning
-    return cleanSizeLabel(item);
-  }
-  
-  if (layer === 'TRIPLE') {
-    return size; // Just "20mm"
-  } else if (layer === 'SINGLE') {
-    return '<strong>(SL)</strong> ' + size; // "**(SL)** 20mm"
+  if (size) {
+    return size; // Just "20mm" for both Triple and Single
   }
   
   return cleanSizeLabel(item);
+}
+
+// GI FLANGE SIZE EXTRACTION - For items in GI Flange category
+function getGIFlangeSize(name) {
+  // Extract size from patterns like "GI FLANGE ID TURNED - 1" or "GI FLANGE - 2" or "FLANGE 3/4"
+  // Look for size after dash or at end: 1", 2", 3", 1/2", 3/4", 4"
+  const match = name.match(/(\d+(?:\/\d+)?)"?\s*$/);
+  if (match) {
+    return match[1] + '"';
+  }
+  return null;
+}
+
+function getFlangeDisplayLabel(item) {
+  const cat = getItemCategory(item);
+  const name = item.name || '';
+  
+  // If item is in GI Flange category (or similar flange category)
+  if (cat && /flange/i.test(cat)) {
+    const size = getGIFlangeSize(name);
+    if (size) {
+      return size; // Show just "1"", "2"", "3/4"", etc.
+    }
+  }
+  
+  // Not a flange item, use regular display
+  return null; // Return null so it falls back to normal display
 }
 
 // ===== RENDERING =====
@@ -2048,6 +2085,9 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   const items = allItems.filter(i => {
     if (getItemColour(i) !== colour) return false;
+    // Skip uncategorized items - they appear only in Uncat tab
+    const cat = getItemCategory(i);
+    if (!cat) return false;
     const s = getItemStatus(i);
     if (filter === 'low' && s !== 'low') return false;
     if (filter === 'out' && s !== 'out') return false;
@@ -2126,133 +2166,29 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
     ...regularCats.map(c => c.name).filter(c => grouped[c]),
     ...Object.keys(grouped).filter(c => !regularCats.some(rc => rc.name === c))
   ];
-  
-  // Build combined group comparison data
-  const combinedData = combinedGroups.map(group => {
-    const combineCats = group.combine;
-    const allItems = combineCats.flatMap(catName => grouped[catName] || []);
-    if (allItems.length === 0) return null;
-    
-    // Extract sizes and match items
-    const sizeMap = new Map();
-    allItems.forEach(item => {
-      const size = extractSizeFromName(item.name, combineCats);
-      if (!sizeMap.has(size)) sizeMap.set(size, {});
-      const catName = getItemCategory(item);
-      sizeMap.get(size)[catName] = item;
-    });
-    
-    return {
-      name: group.name,
-      combineCats: combineCats,
-      sizes: Array.from(sizeMap.entries()).sort((a, b) => extractSize(a[0]) - extractSize(b[0]))
-    };
-  }).filter(Boolean);
 
-  // Build rows with 4 columns (3 regular + 1 combined)
+  // Build rows with 4 columns (all regular categories)
   const rows = [];
-  let catIdx = 0;
-  let combinedIdx = 0;
-  
-  while (catIdx < orderedCats.length || combinedIdx < combinedData.length || uncategorised.length > 0) {
-    const row = { regular: [], combined: null, uncategorised: null };
-    
-    // Fill 3 regular category slots
-    for (let i = 0; i < 3 && catIdx < orderedCats.length; i++) {
-      row.regular.push(orderedCats[catIdx++]);
-    }
-    
-    // Fill combined slot (if available)
-    if (combinedIdx < combinedData.length) {
-      row.combined = combinedData[combinedIdx++];
-    }
-    
-    // Or fill uncategorised (only once at end)
-    if (uncategorised.length > 0 && row.regular.length < 3 && !row.combined) {
-      row.uncategorised = true;
-      const uncatCopy = [...uncategorised];
-      uncategorised = []; // Clear after using
-      row.uncatItems = uncatCopy;
-    }
-    
-    rows.push(row);
+  for (let i = 0; i < orderedCats.length; i += 4) {
+    rows.push(orderedCats.slice(i, i + 4));
   }
 
   // Render all rows
   const html = rows.map(row => {
-    const regularBlocks = row.regular.map(catName => {
+    const blocks = row.map(catName => {
       const catItems = grouped[catName];
       return renderCatBlock(catName, catItems, hdrClass, thCols, whCols);
     });
     
-    // Fill empty slots if less than 3 regular categories
-    while (regularBlocks.length < 3) {
-      regularBlocks.push('<div class="cat-block" style="visibility:hidden"></div>');
+    // Fill empty slots if less than 4 categories
+    while (blocks.length < 4) {
+      blocks.push('<div class="cat-block" style="visibility:hidden"></div>');
     }
     
-    let combinedBlock = '';
-    if (row.combined) {
-      combinedBlock = renderCombinedBlock(row.combined, whCols);
-    } else if (row.uncategorised && row.uncatItems) {
-      const trs = row.uncatItems.map(item => renderItemRow(item, whCols)).join('');
-      combinedBlock = `<div class="cat-block"><div class="${hdrClass}">Uncat <span class="cat-header-count">${row.uncatItems.length}</span></div><table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
-    } else {
-      combinedBlock = '<div class="cat-block" style="visibility:hidden"></div>';
-    }
-    
-    return `<div class="cat-row">${regularBlocks.join('')}${combinedBlock}</div>`;
+    return `<div class="cat-row">${blocks.join('')}</div>`;
   }).join('');
 
   document.getElementById(gridId).innerHTML = html;
-}
-
-function renderCombinedBlock(combinedData, whCols) {
-  const { name, combineCats, sizes } = combinedData;
-  
-  // Create shorter column headers (max 12 chars)
-  const shortNames = combineCats.map(cat => {
-    let short = cat
-      .replace('PPRC ', '')
-      .replace('UPVC ', '')
-      .replace('CPVC ', '')
-      .replace('Reducing ', 'Red.')
-      .replace('Reducer', 'Red.')
-      .substring(0, 12);
-    return short;
-  });
-  
-  // Build header row with Size + each category
-  const thCols = '<th>Size</th>' + combineCats.map((cat, i) =>
-    `<th title="${esc(cat)}">${esc(shortNames[i])}</th>`
-  ).join('');
-  
-  // Build data rows
-  const trs = sizes.map(([size, itemsByCat]) => {
-    const tds = combineCats.map(cat => {
-      const item = itemsByCat[cat];
-      if (!item) return '<td style="color:#9b968f">—</td>';
-      
-      const status = getItemStatus(item);
-      const cls = status === 'ok' ? 'qty-ok' : status === 'low' ? 'qty-low' : 'qty-out';
-      const totalQty = whCols.reduce((sum, w) =>
-        sum + (item.warehouses.find(x => x.id === w.id)?.stock ?? 0), 0
-      );
-      
-      return `<td class="${cls}" title="${esc(item.name)}">${totalQty}</td>`;
-    }).join('');
-    
-    return `<tr><td title="${esc(size)}">${esc(size)}</td>${tds}</tr>`;
-  }).join('');
-  
-  return `<div class="cat-block combined-block">
-    <div class="cat-header combined-header">${esc(name)}
-      <span class="cat-header-count">${sizes.length} sizes</span>
-    </div>
-    <table class="comparison-table">
-      <thead><tr>${thCols}</tr></thead>
-      <tbody>${trs}</tbody>
-    </table>
-  </div>`;
 }
 
 function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
@@ -2266,12 +2202,19 @@ function renderItemRow(item, whCols) {
   const rowClass = status === 'low' ? 'row-low' : status === 'out' ? 'row-out' : '';
   const totalClass = status === 'ok' ? 'qty-ok' : status === 'low' ? 'qty-low' : 'qty-out';
   
-  // Use pipe display for pipe items, otherwise cleanSizeLabel
+  // Use pipe display for pipe items
   let sizeLabel;
   if (isPipeItem(item)) {
     sizeLabel = getPipeDisplayLabel(item);
   } else {
-    sizeLabel = cleanSizeLabel(item).substring(0, 12);
+    // Check if it's a flange item
+    const flangeLabel = getFlangeDisplayLabel(item);
+    if (flangeLabel) {
+      sizeLabel = flangeLabel;
+    } else {
+      // Not a pipe or flange, use regular cleaning
+      sizeLabel = cleanSizeLabel(item).substring(0, 12);
+    }
   }
   
   const whTds = whCols.map(w => {
@@ -2621,33 +2564,6 @@ function renderSettingsCats() {
   `).join('');
   
   initCatDrag();
-  renderCombinedGroups();
-}
-
-function renderCombinedGroups() {
-  const list = document.getElementById('combinedGroupsList');
-  if (!list) return;
-  const combinedGroups = (settings.categoryOrder || []).filter(cat => cat.combine && cat.combine.length > 0);
-  
-  if (combinedGroups.length === 0) {
-    list.innerHTML = '<div style="color:var(--text-tertiary);font-size:13px;padding:12px;">No combined groups yet. Click "+ Add Combined Group" to create one.</div>';
-    return;
-  }
-  
-  list.innerHTML = combinedGroups.map(group => {
-    const originalIdx = settings.categoryOrder.findIndex(c => c === group);
-    return `
-    <div class="combined-group-card">
-      <div class="combined-group-header">
-        <span class="combined-group-name">${esc(group.name)}</span>
-        <span class="combined-group-count">${group.combine.length} categories</span>
-        <button class="del-btn" onclick="deleteCat(${originalIdx})">×</button>
-      </div>
-      <div class="combined-group-cats">
-        ${group.combine.map(cat => `<span class="combined-cat-tag">${esc(cat)}</span>`).join('')}
-      </div>
-    </div>`;
-  }).join('');
 }
 
 function initCatDrag() {
@@ -2698,24 +2614,6 @@ function addCategory() {
   const keyword = prompt('Keyword to match in item name:', name.toLowerCase());
   if (keyword === null) return;
   settings.categoryOrder.push({ name: name.trim(), keyword: keyword.trim() });
-  renderSettingsCats();
-}
-
-function addCombinedCategory() {
-  const name = prompt('Combined Group name (e.g. PPRC Comparison):');
-  if (!name) return;
-  const categories = prompt('Enter category names to combine (comma-separated):\n(e.g. "PPRC Reducer, PPRC Reducing Tee")');
-  if (!categories) return;
-  const combineList = categories.split(',').map(c => c.trim()).filter(c => c);
-  if (combineList.length < 2) {
-    alert('Need at least 2 categories to combine');
-    return;
-  }
-  settings.categoryOrder.push({
-    name: name.trim(),
-    keyword: combineList[0],
-    combine: combineList
-  });
   renderSettingsCats();
 }
 
