@@ -717,7 +717,7 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   const combinedGroups = (settings.categoryOrder || []).filter(c => c.combine && c.combine.length > 0);
   const regularCats = (settings.categoryOrder || []).filter(c => !c.combine);
   
-  const grouped = {}; const uncategorised = [];
+  const grouped = {}; let uncategorised = [];
   items.forEach(item => {
     const cat = getItemCategory(item);
     if (!cat) { uncategorised.push(item); return; }
