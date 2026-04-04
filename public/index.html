@@ -1963,6 +1963,68 @@ function extractSizeFromName(name, categories) {
   return sizePart || name;
 }
 
+// PIPE ITEM EXTRACTION - For PPRC pipes with LAYER format
+function isPipeItem(item) {
+  const name = item.name || '';
+  // Must have ALL THREE: "LAYER", "PIPE", and "PN"
+  // This prevents fittings like "PPR COUPLING PN10" and "PIPE CLAMP PN10" from being treated as pipes
+  const hasLayer = /\bLAYER\b/i.test(name);
+  const hasPipe = /\bPIPE\b/i.test(name);
+  const hasPN = /\bPN\d+/i.test(name);
+  return hasLayer && hasPipe && hasPN;
+}
+
+function extractPipeLayer(name) {
+  // Returns: 'TRIPLE' or 'SINGLE' or null
+  if (/TRIPLE\s+LAYER/i.test(name)) return 'TRIPLE';
+  if (/SINGLE\s+LAYER/i.test(name)) return 'SINGLE';
+  return null;
+}
+
+function extractPipeSize(name) {
+  // Extract size like "20MM", "25MM" -> return "20mm", "25mm"
+  const match = name.match(/(\d+)\s*MM/i);
+  if (match) {
+    return match[1] + 'mm';
+  }
+  return null;
+}
+
+function getPipeSortOrder(name) {
+  // Returns numeric value for sorting: Triple = 0, Single = 1000, then add size
+  const layer = extractPipeLayer(name);
+  const size = extractPipeSize(name);
+  const sizeNum = size ? parseInt(size) : 0;
+  
+  // Triple layer items get lower sort values (appear first)
+  // Single layer items get higher sort values (appear after)
+  if (layer === 'TRIPLE') {
+    return sizeNum; // 20, 25, 32, etc.
+  } else if (layer === 'SINGLE') {
+    return 1000 + sizeNum; // 1020, 1025, 1032, etc.
+  }
+  return 9999; // Non-pipe items at end
+}
+
+function getPipeDisplayLabel(item) {
+  const name = item.name || '';
+  const layer = extractPipeLayer(name);
+  const size = extractPipeSize(name);
+  
+  if (!layer || !size) {
+    // Not a pipe item, use regular cleaning
+    return cleanSizeLabel(item);
+  }
+  
+  if (layer === 'TRIPLE') {
+    return size; // Just "20mm"
+  } else if (layer === 'SINGLE') {
+    return '<strong>(SL)</strong> ' + size; // "**(SL)** 20mm"
+  }
+  
+  return cleanSizeLabel(item);
+}
+
 // ===== RENDERING =====
 function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   const search = (document.getElementById(searchId)?.value || '').toLowerCase();
@@ -2002,8 +2064,42 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
     grouped[cat].push(item);
   });
   
-  Object.values(grouped).forEach(arr => arr.sort((a, b) => extractSize(a.name) - extractSize(b.name)));
-  uncategorised.sort((a, b) => extractSize(a.name) - extractSize(b.name));
+  Object.values(grouped).forEach(arr => {
+    arr.sort((a, b) => {
+      // Check if both are pipe items
+      const aIsPipe = isPipeItem(a);
+      const bIsPipe = isPipeItem(b);
+      
+      if (aIsPipe && bIsPipe) {
+        // Both are pipes - use pipe sort order (Triple first, then Single)
+        return getPipeSortOrder(a.name) - getPipeSortOrder(b.name);
+      } else if (aIsPipe) {
+        // Only a is pipe - put pipes first
+        return -1;
+      } else if (bIsPipe) {
+        // Only b is pipe - put pipes first
+        return 1;
+      } else {
+        // Neither is pipe - use regular size sorting
+        return extractSize(a.name) - extractSize(b.name);
+      }
+    });
+  });
+  
+  uncategorised.sort((a, b) => {
+    const aIsPipe = isPipeItem(a);
+    const bIsPipe = isPipeItem(b);
+    
+    if (aIsPipe && bIsPipe) {
+      return getPipeSortOrder(a.name) - getPipeSortOrder(b.name);
+    } else if (aIsPipe) {
+      return -1;
+    } else if (bIsPipe) {
+      return 1;
+    } else {
+      return extractSize(a.name) - extractSize(b.name);
+    }
+  });
 
   const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : colour === 'Raw Material' ? 'cat-header rm-hdr' : colour === 'Green' ? 'cat-header green-hdr' : 'cat-header';
   const whCols = warehouses.length > 0 ? warehouses : [];
@@ -2153,14 +2249,22 @@ function renderItemRow(item, whCols) {
   const status = getItemStatus(item);
   const rowClass = status === 'low' ? 'row-low' : status === 'out' ? 'row-out' : '';
   const totalClass = status === 'ok' ? 'qty-ok' : status === 'low' ? 'qty-low' : 'qty-out';
-  const sizeLabel = cleanSizeLabel(item).substring(0, 12);
+  
+  // Use pipe display for pipe items, otherwise cleanSizeLabel
+  let sizeLabel;
+  if (isPipeItem(item)) {
+    sizeLabel = getPipeDisplayLabel(item);
+  } else {
+    sizeLabel = cleanSizeLabel(item).substring(0, 12);
+  }
+  
   const whTds = whCols.map(w => {
     const wh = item.warehouses.find(x => x.id === w.id);
     const qty = wh?.stock ?? 0;
     const qc = qty <= 0 ? 'qty-out' : (item.reorder_level && qty <= item.reorder_level) ? 'qty-low' : 'qty-ok';
     return `<td class="${qc}">${qty}</td>`;
   }).join('');
-  return `<tr class="${rowClass}"><td title="${esc(item.name)}">${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
+  return `<tr class="${rowClass}"><td title="${esc(item.name)}">${sizeLabel}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
 }
 
 function renderGreen() {
