@@ -43,9 +43,10 @@
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
 }
+.login-box {
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 40px 36px; width: 340px; border-radius: 8px;
-}
+  background: var(--surface);
 }
 .login-field label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
 .login-field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px; outline: none; border-radius: 4px; transition: border-color 0.2s; }
@@ -587,6 +588,11 @@ const TYPES = ['Green','Blue','Raw Material','Red','Unknown'];
 const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', 'Raw Material':'pill-rm', Red:'pill-red', Unknown:'pill-unknown' };
 const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', 'Raw Material':'#a855f7', Red:'#991b1b', Unknown:'#6b7280' };
 
+function extractSize(name) {
+  const m = name.match(/(\d+(?:\.\d+)?)\s*mm/i);
+  return m ? parseFloat(m[1]) : 9999;
+}
+
 function getItemColour(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.colour || item.colour; }
 function getItemCategory(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.category !== undefined ? ov.category : item.category; }
 function getItemStatus(item) {
@@ -819,8 +825,6 @@ function renderMaster() {
   document.getElementById('masterCount').textContent = `${items.length} items`;
   const tbody = document.getElementById('masterBody');
   if (!tbody) return;
-  
-  const PILL_DOT = { 'Green': 'var(--green)', 'Blue': 'var(--blue)', 'Raw Material': 'var(--rm)', 'Red': 'var(--red)', 'Unknown': '#9ca3af' };
   
   tbody.innerHTML = items.map(item => {
     const colour = getItemColour(item);
