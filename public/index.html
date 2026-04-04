@@ -830,7 +830,14 @@ table.master td {
   border-bottom: 1px solid var(--border-light);
   border-right: 1px solid var(--border-light);
   vertical-align: middle;
-  font-size: 13px;
+  font-size: 12px;
+}
+
+/* Type column - 3rd column */
+table.master th:nth-child(3),
+table.master td:nth-child(3) {
+  min-width: 110px;
+  white-space: nowrap;
 }
 
 table.master td:last-child {
