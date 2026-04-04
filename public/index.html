@@ -37,6 +37,12 @@
   --mono: 'DM Mono', monospace;
   --sans: 'Inter', sans-serif;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; }
 
@@ -45,14 +51,32 @@ body { background: var(--bg); font-family: var(--sans); color: var(--text); min-
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 .login-box {
   background: #fff; border: 1px solid var(--border);
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 40px 36px; width: 340px; border-radius: 8px;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 .login-brand {
   font-family: var(--mono); font-size: 13px; color: var(--nav-bg); letter-spacing: 0.18em; margin-bottom: 32px;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 .login-brand span { color: #0ea5e9; }
 .login-field { margin-bottom: 16px; }
 .login-field label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
@@ -482,6 +506,12 @@ async function doLogin() {
     btn.disabled = false; btn.textContent = 'Sign In';
   }
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function doLogout() {
   sessionStorage.removeItem('stockmx_session');
@@ -489,6 +519,12 @@ function doLogout() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appShell').style.display = 'none';
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
@@ -504,11 +540,23 @@ async function startApp() {
   // Ensure the default landing page (Green) renders correctly with full state
   renderGreen();
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 // API
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-app-token': session.token };
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function showSkeleton() {
   const s = `<div class="skeleton-grid">${[0,1,2].map(()=>`<div class="skeleton-block"><div class="skeleton-hdr"></div>${[0,1,2,3,4].map(()=>`<div class="skeleton-row"></div>`).join('')}</div>`).join('')}</div>`;
@@ -518,6 +566,12 @@ function showSkeleton() {
     document.getElementById('grid-rm').innerHTML = s;
   }
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 async function loadStock() {
   if (allItems.length) {
@@ -545,6 +599,12 @@ async function loadStock() {
     }
   }
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 async function loadSettings() {
   try {
@@ -553,6 +613,12 @@ async function loadSettings() {
     renderSettingsCats();
   } catch {}
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 async function loadUsers() {
   try {
@@ -561,6 +627,12 @@ async function loadUsers() {
     renderUsers();
   } catch {}
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 async function saveSettings() {
   try {
@@ -569,6 +641,12 @@ async function saveSettings() {
     alert('Settings saved!');
   } catch (e) { alert('Save failed: ' + e.message); }
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 // HELPERS
 const TYPES = ['Green','Blue','Raw Material','Red','Unknown'];
@@ -583,6 +661,12 @@ function getItemStatus(item) {
   if (item.reorder_level && t <= item.reorder_level) return 'low';
   return 'ok';
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 function extractSize(name) { const m = name.match(/(\d+(?:\.\d+)?)\s*mm/i); return m ? parseFloat(m[1]) : 9999; }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -595,6 +679,12 @@ function cleanSizeLabel(item) {
   label = label.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
   return label || item.name;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 // STOCK GRID RENDER - 4 columns: 3 regular + 1 combined
 function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
@@ -713,6 +803,12 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   document.getElementById(gridId).innerHTML = html;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function extractSizeFromName(name, categories) {
   let sizePart = name;
@@ -725,6 +821,12 @@ function extractSizeFromName(name, categories) {
   sizePart = sizePart.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
   return sizePart || name;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function renderCombinedBlock(combinedData, whCols) {
   const { name, combineCats, sizes } = combinedData;
@@ -746,12 +848,24 @@ function renderCombinedBlock(combinedData, whCols) {
   
   return `<div class="cat-block combined-block"><div class="cat-header combined-header">${esc(name)} <span class="cat-header-count">${sizes.length} sizes</span></div><table class="comparison-table"><thead><tr>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
   const label = catName === '__uncat__' ? 'Uncat' : catName.substring(0, 18);
   const trs = catItems.map(item => renderItemRow(item, whCols)).join('');
   return `<div class="cat-block"><div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length}</span></div><table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function renderItemRow(item, whCols) {
   const status = getItemStatus(item);
@@ -766,6 +880,12 @@ function renderItemRow(item, whCols) {
   }).join('');
   return `<tr class="${rowClass}"><td>${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
 }
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
 function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue','bStat-ok','bStat-low','bStat-out'); }
@@ -778,452 +898,13 @@ function setStockFilter(colour, val, el) {
   if (colour === 'green') renderGreen(); 
   else if (colour === 'blue') renderBlue();
   else if (colour === 'rm') renderRM();
-}ad>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Matrix</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<style>
-:root {
-  --bg:       #f0f2f5;
-  --surface:  #ffffff;
-  --border:   #d4d8de;
-  --border-h: #b0b6be;
-  --text:     #1a1f2e;
-  --muted:    #6b7280;
-  --faint:    #c0c6ce;
-  --head-bg:  #f8f9fa;
-  --nav-bg:   #1e293b;
-  --nav-accent: #38bdf8;
-  --green:       #166534;
-  --green-light: #dcfce7;
-  --green-border:#86efac;
-  --blue:        #1e40af;
-  --blue-light:  #dbeafe;
-  --blue-border: #93c5fd;
-  --red:         #991b1b;
-  --red-light:   #fee2e2;
-  --red-border:  #fca5a5;
-  --rm:          #a855f7;
-  --rm-light:     #f3e8ff;
-  --rm-border:    #d8b4fe;
-  --unknown-light:#f3f4f6;
-  --warn:   #92400e;
-  --danger: #991b1b;
-  --mono: 'DM Mono', monospace;
-  --sans: 'Inter', sans-serif;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; }
-
-/* LOGIN */
-#loginScreen {
-  min-height: 100vh; display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
-}
-.login-box {
-  background: #fff; border: 1px solid var(--border);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  padding: 40px 36px; width: 340px; border-radius: 8px;
-}
-.login-brand {
-  font-family: var(--mono); font-size: 13px; color: var(--nav-bg); letter-spacing: 0.18em; margin-bottom: 32px;
-}
-.login-brand span { color: #0ea5e9; }
-.login-field { margin-bottom: 16px; }
-.login-field label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
-.login-field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px; outline: none; border-radius: 4px; transition: border-color 0.2s; }
-.login-field input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
-.login-btn { width: 100%; background: #0ea5e9; color: #fff; border: none; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 0.1em; padding: 11px; cursor: pointer; margin-top: 8px; border-radius: 4px; transition: background 0.2s; }
-.login-btn:hover { background: #0284c7; }
-.login-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.login-error { margin-top: 12px; font-family: var(--mono); font-size: 10px; color: #dc2626; text-align: center; min-height: 16px; }
-
-/* APP SHELL */
-#appShell { display: none; }
-
-/* NAV */
-nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 24px; height: 50px; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-.nav-brand { font-family: var(--mono); font-size: 12px; color: #fff; letter-spacing: 0.12em; margin-right: 28px; }
-.nav-brand span { color: var(--nav-accent); }
-.nav-tab { height: 50px; display: flex; align-items: center; padding: 0 14px; font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.45); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; user-select: none; }
-.nav-tab:hover { color: rgba(255,255,255,0.8); }
-.nav-tab.active-green   { color: #4ade80; border-bottom-color: #4ade80; }
-.nav-tab.active-blue    { color: var(--nav-accent); border-bottom-color: var(--nav-accent); }
-.nav-tab.active-rm      { color: #a855f7; border-bottom-color: #a855f7; }
-.nav-tab.active-master  { color: #fbbf24; border-bottom-color: #fbbf24; }
-.nav-tab.active-sales  { color: #fb923c; border-bottom-color: #fb923c; }
-.nav-tab.active-settings{ color: #e2e8f0; border-bottom-color: #e2e8f0; }
-.nav-dot { width:7px; height:7px; border-radius:50%; margin-right:7px; flex-shrink:0; }
-.dot-green { background:#4ade80; } .dot-blue { background:var(--nav-accent); }
-.dot-rm { background:#a855f7; }
-.dot-master { background:#fbbf24; } .dot-settings { background:#94a3b8; }
-.nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-.nav-user  { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.35); }
-.nav-sync  { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); }
-.btn-nav { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; color: rgba(255,255,255,0.6); font-family: var(--mono); font-size: 10px; padding: 5px 10px; cursor: pointer; letter-spacing: 0.06em; transition: background 0.15s; }
-.btn-nav:hover { background: rgba(255,255,255,0.15); }
-
-/* PAGES */
-.page { display: none; }
-.page.active { display: block; }
-
-/* TOOLBAR */
-.toolbar { padding: 10px 24px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,0.04); flex-wrap: wrap; }
-.page-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-right: 6px; }
-.colour-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
-.badge-green { background: var(--green-light); color: var(--green); }
-.badge-blue  { background: var(--blue-light);  color: var(--blue); }
-.search { min-width: 180px; max-width: 250px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-family: var(--sans); font-size: 12px; padding: 6px 10px; color: var(--text); outline: none; }
-.search:focus { border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14,165,233,0.1); }
-.filter-pill { background: transparent; border: 1px solid var(--border); border-radius: 20px; font-size: 11px; font-weight: 500; padding: 4px 12px; cursor: pointer; color: var(--muted); transition: all 0.15s; font-family: var(--sans); }
-.filter-pill.f-active { background: var(--text); color: #fff; border-color: var(--text); }
-.filter-pill:hover:not(.f-active) { border-color: var(--border-h); color: var(--text); }
-.stats-chips { margin-left: auto; display: flex; gap: 6px; }
-.chip { font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 10px; border: 1px solid transparent; }
-.chip-ok  { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
-.chip-low { background: #fef3c7; color: var(--warn); border-color: #fcd34d; }
-.chip-out { background: var(--red-light); color: var(--danger); border-color: var(--red-border); }
-.btn-export-pdf { background: #fff; border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; color: var(--muted); display: flex; align-items: center; gap: 5px; transition: all 0.15s; white-space: nowrap; }
-.btn-export-pdf:hover { border-color: #dc2626; color: #dc2626; background: #fff5f5; }
-.dot-sales { background:#fb923c; }
-.nav-tab.active-sales { color: #fb923c; border-bottom-color: #fb923c; }
-
-
-/* STOCK GRID */
-.grid-wrap { padding: 18px 24px 48px; background: var(--bg); }
-.cat-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1.8fr; gap: 10px; margin-bottom: 10px; }
-.cat-row.combined-row { grid-template-columns: 1fr 1fr 1fr 1.8fr; }
-.cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); min-width: 0; }
-.cat-block.combined-block { border-color: #0ea5e9; box-shadow: 0 2px 8px rgba(14,165,233,0.1); }
-.combined-header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; }
-.comparison-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.comparison-table th { font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 4px 4px; text-align: center; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); background: var(--head-bg); white-space: nowrap; }
-.comparison-table th:first-child { text-align: left; width: 25%; }
-.comparison-table th:last-child { border-right: none; }
-.comparison-table td { padding: 3px 4px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font-family: var(--mono); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.comparison-table td:first-child { text-align: left; font-family: var(--sans); font-size: 10px; font-weight: 500; border-right: 1px solid var(--border-h); }
-.comparison-table td:last-child { border-right: none; }
-.comparison-table tr:last-child td { border-bottom: none; }
-.cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
-.cat-header.blue-hdr { background: var(--blue); }
-.cat-header.rm-hdr   { background: var(--rm); }
-.cat-header-count { font-size: 9px; opacity: 0.5; }
-.cat-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-.cat-table thead tr { background: var(--head-bg); border-bottom: 1px solid var(--border); }
-.cat-table th { font-family: var(--mono); font-size: 8px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 3px 4px; text-align: center; border-right: 1px solid var(--border); white-space: nowrap; }
-.cat-table th:first-child { text-align: left; }
-.cat-table th:last-child  { border-right: none; }
-.cat-table td { padding: 3px 4px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; font-family: var(--mono); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cat-table td:first-child { text-align: left; font-family: var(--sans); font-size: 10px; font-weight: 500; border-right: 1px solid var(--border-h); }
-.cat-table td:last-child  { border-right: none; }
-.cat-table tr:last-child td { border-bottom: none; }
-.cat-table tbody tr:hover td { background: #f0f7ff; }
-.qty-ok  { color: var(--green); }
-.qty-low { color: var(--warn); font-weight: 600; }
-.qty-out { color: var(--danger); font-weight: 600; }
-.col-total { font-weight: 600; background: var(--head-bg) !important; }
-.row-low td:first-child { border-left: 3px solid #f59e0b; }
-.row-out td:first-child { border-left: 3px solid #ef4444; }
-
-/* MASTER TABLE */
-.table-toolbar { padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-.colour-filter { display: flex; gap: 6px; }
-.cf-pill { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--sans); transition: all 0.15s; user-select: none; }
-.cf-pill.active-all   { background: var(--text);         border-color: var(--text);         color: #fff; }
-.cf-pill.active-green { background: var(--green-light);  border-color: var(--green-border); color: var(--green); }
-.cf-pill.active-blue  { background: var(--blue-light);   border-color: var(--blue-border);  color: var(--blue); }
-.cf-pill.active-red   { background: var(--red-light);    border-color: var(--red-border);   color: var(--red); }
-.cf-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.table-wrap { padding: 20px 24px 48px; overflow-x: auto; background: var(--bg); }
-table.master { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); border: 1px solid var(--border); }
-table.master thead { background: var(--head-bg); }
-table.master th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 7px 10px; text-align: left; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); white-space: normal; line-height: 1.2; cursor: pointer; user-select: none; }
-table.master th:last-child { border-right: none; }
-table.master th:hover { color: var(--text); }
-table.master th.sorted-asc::after  { content: ' ↑'; opacity: 0.5; }
-table.master th.sorted-desc::after { content: ' ↓'; opacity: 0.5; }
-table.master td { padding: 8px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; font-size: 12px; }
-table.master td:last-child  { border-right: none; }
-table.master tr:last-child td { border-bottom: none; }
-table.master tbody tr:hover td { background: #f0f7ff; }
-tr.row-uncat td { background: #fffbf0; }
-tr.row-uncat td:first-child { border-left: 3px solid #f59e0b; }
-.td-name { font-weight: 500; }
-.td-unit { color: var(--muted); font-size: 11px; }
-.td-reorder { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: right; }
-.cat-text { display: inline-block; font-size: 12px; color: var(--text); min-width: 60px; padding: 1px 2px; border-bottom: 1px dashed transparent; transition: border-color 0.15s; cursor: default; }
-.cat-text.undetected { color: var(--muted); font-style: italic; }
-tr:hover .cat-text { border-bottom-color: var(--faint); cursor: text; }
-.cat-input { font-family: var(--sans); font-size: 12px; font-weight: 500; color: var(--text); background: var(--surface); border: 1px solid #0ea5e9; border-radius: 3px; padding: 2px 6px; outline: none; width: 130px; }
-.edit-hint { font-size: 9px; color: var(--faint); margin-left: 5px; opacity: 0; transition: opacity 0.15s; font-family: var(--mono); letter-spacing: 0.06em; user-select: none; }
-tr:hover .edit-hint { opacity: 1; }
-.colour-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: opacity 0.15s; user-select: none; letter-spacing: 0.04em; }
-.colour-pill:hover { opacity: 0.75; }
-.colour-pill .cdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
-.pill-green   { background: var(--green-light); border-color: var(--green-border); color: var(--green); }
-.pill-blue    { background: var(--blue-light);  border-color: var(--blue-border);  color: var(--blue); }
-.pill-red     { background: var(--red-light);   border-color: var(--red-border);   color: var(--red); }
-.pill-unknown { background: var(--unknown-light); border-color: var(--border); color: var(--muted); }
-.item-count { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--muted); }
-.btn-sm { background: var(--text); color: #fff; border: none; border-radius: 4px; font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
-.btn-sm.outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
-.btn-sm.outline:hover { border-color: var(--border-h); color: var(--text); }
-.master-legend { display: flex; align-items: center; gap: 14px; padding: 8px 24px; border-bottom: 1px solid var(--border); background: var(--surface); font-size: 11px; color: var(--muted); flex-wrap: wrap; }
-
-/* SETTINGS */
-.settings-header { padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; gap: 12px; }
-.settings-wrap { padding: 24px; max-width: 900px; }
-.settings-section { margin-bottom: 36px; }
-.section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-.cat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 10px; }
-.cat-card { background: var(--surface); border: 1px solid var(--border); padding: 10px 12px; display: flex; align-items: center; gap: 8px; cursor: grab; user-select: none; transition: box-shadow 0.15s; border-radius: 4px; }
-.cat-card.combined { background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%); border-color: #0ea5e9; }
-.cat-card.combined .cat-name-text { color: #0ea5e9; font-weight: 600; }
-.combine-badge { font-size: 9px; background: #0ea5e9; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
-.cat-card:active { cursor: grabbing; }
-.cat-card:hover  { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.cat-card.drag-over { border: 1px dashed #0ea5e9; background: #f0f9ff; }
-.drag-handle { color: var(--faint); font-size: 14px; flex-shrink: 0; }
-.cat-order   { font-family: var(--mono); font-size: 10px; color: var(--faint); width: 16px; flex-shrink: 0; }
-.cat-name-text { font-size: 12px; font-weight: 500; flex: 1; }
-.keyword-tag { font-family: var(--mono); font-size: 9px; background: var(--bg); border: 1px solid var(--border); padding: 2px 5px; color: var(--muted); border-radius: 3px; }
-/* Combined Groups in Settings */
-.combined-groups-list { display: flex; flex-direction: column; gap: 8px; }
-.combined-group-card { background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%); border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px; }
-.combined-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.combined-group-name { font-size: 13px; font-weight: 600; color: #0ea5e9; }
-.combined-group-count { font-family: var(--mono); font-size: 9px; background: #0ea5e9; color: #fff; padding: 2px 6px; border-radius: 10px; }
-.combined-group-cats { display: flex; flex-wrap: wrap; gap: 6px; }
-.combined-cat-tag { font-family: var(--mono); font-size: 10px; background: var(--bg); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; color: var(--text); }
-.add-cat-btn { background: transparent; border: 1px dashed var(--border); padding: 10px 12px; font-size: 12px; color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s; font-family: var(--sans); border-radius: 4px; }
-.add-cat-btn:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
-table.users { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); font-size: 12px; }
-table.users th { font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 9px 12px; border-bottom: 2px solid var(--border); border-right: 1px solid var(--border); text-align: left; background: var(--head-bg); }
-table.users th:last-child { border-right: none; }
-table.users td { padding: 8px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); vertical-align: middle; }
-table.users td:last-child { border-right: none; }
-table.users tr:last-child td { border-bottom: none; }
-.wh-badge { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); }
-.role-admin { color: var(--green); font-weight: 600; font-size: 11px; }
-.role-user  { color: var(--muted); font-size: 11px; }
-.del-btn { background: none; border: none; color: var(--faint); cursor: pointer; font-size: 14px; }
-.del-btn:hover { color: var(--danger); }
-.new-user-row { background: #f8fafc; }
-.new-user-row td input, .new-user-row td select { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; font-family: var(--sans); font-size: 11px; padding: 4px 7px; color: var(--text); outline: none; width: 100%; }
-.new-user-row td input:focus, .new-user-row td select:focus { border-color: #0ea5e9; }
-.add-user-btn { background: var(--text); color: #fff; border: none; border-radius: 4px; font-family: var(--sans); font-size: 11px; font-weight: 500; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
-.dbl-hint { position: fixed; background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; padding: 5px 10px; border-radius: 4px; pointer-events: none; z-index: 999; opacity: 0; transition: opacity 0.2s; letter-spacing: 0.06em; }
-.dbl-hint.show { opacity: 1; }
-@media (max-width:900px) { .cat-row { grid-template-columns: repeat(2,1fr); } .cat-grid { grid-template-columns: repeat(2,1fr); } }
-@media (max-width:600px) { .cat-row { grid-template-columns: 1fr; } .stats-chips { display: none; } }
-</style>
-</head>
-<body>
-
-<div class="dbl-hint" id="dblHint">double-click to edit</div>
-
-<!-- LOGIN -->
-<div id="loginScreen">
-  <div class="login-box">
-    <div class="login-brand">STOCK <span>//</span> MX</div>
-    <div class="login-field">
-      <label>Username or Email</label>
-      <input type="text" id="loginEmail" placeholder="admin" autocomplete="username" />
-    </div>
-    <div class="login-field">
-      <label>Password</label>
-      <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" />
-    </div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
-<!-- APP SHELL -->
-<div id="appShell">
-
-  <nav id="mainNav">
-    <div class="nav-brand">STOCK <span>//</span> MX</div>
-    <div class="nav-tab active-green" onclick="showPage('green',this,'active-green')"><span class="nav-dot dot-green"></span>Green</div>
-    <div class="nav-tab"             onclick="showPage('blue',this,'active-blue')"><span class="nav-dot dot-blue"></span>Blue</div>
-    <div class="nav-tab"             onclick="showPage('rm',this,'active-rm')"><span class="nav-dot dot-rm"></span>RM</div>
-    <div class="nav-tab"            onclick="showPage('master',this,'active-master')">Master</div>
-    <div class="nav-tab"            onclick="showPage('sales',this,'active-sales');loadSales()"><span class="nav-dot" style="background:#fb923c"></span>Sales</div>
-    <div class="nav-tab"            onclick="showPage('settings',this,'active-settings')">Settings</div>
-    <div class="nav-right">
-      <span class="nav-sync" id="navSync"></span>
-      <span class="nav-user" id="navUser"></span>
-      <button class="btn-nav" onclick="doLogout()">Logout</button>
-    </div>
-  </nav>
-
-  <!-- GREEN PAGE -->
-  <div class="page active" id="page-green">
-    <div class="toolbar">
-      <div class="page-title">Stock View <span class="colour-badge badge-green">● Green</span></div>
-      <input class="search" id="search-green" placeholder="Search…" oninput="renderGreen()" />
-      <button class="filter-pill f-active" onclick="setStockFilter('green','all',this)">All</button>
-      <button class="filter-pill"          onclick="setStockFilter('green','low',this)">Low Stock</button>
-      <button class="filter-pill"          onclick="setStockFilter('green','out',this)">Out of Stock</button>
-      <button class="btn-export-pdf"       onclick="exportPDF('Green')">⬇ Export PDF</button>
-      <div class="stats-chips">
-        <span class="chip chip-ok"  id="gStat-ok"></span>
-        <span class="chip chip-low" id="gStat-low"></span>
-        <span class="chip chip-out" id="gStat-out"></span>
-      </div>
-    </div>
-    <div class="grid-wrap" id="grid-green"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
-  </div>
-
-  <!-- BLUE PAGE -->
-  <div class="page" id="page-blue">
-    <div class="toolbar">
-      <div class="page-title">Stock View <span class="colour-badge badge-blue">● Blue</span></div>
-      <input class="search" id="search-blue" placeholder="Search…" oninput="renderBlue()" />
-      <button class="filter-pill f-active" onclick="setStockFilter('blue','all',this)">All</button>
-      <button class="filter-pill"          onclick="setStockFilter('blue','low',this)">Low Stock</button>
-      <button class="filter-pill"          onclick="setStockFilter('blue','out',this)">Out of Stock</button>
-      <button class="btn-export-pdf"       onclick="exportPDF('Blue')">⬇ Export PDF</button>
-      <div class="stats-chips">
-        <span class="chip chip-ok"  id="bStat-ok"></span>
-        <span class="chip chip-low" id="bStat-low"></span>
-        <span class="chip chip-out" id="bStat-out"></span>
-      </div>
-    </div>
-    <div class="grid-wrap" id="grid-blue"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
-  </div>
-
-  <!-- RM PAGE -->
-  <div class="page" id="page-rm">
-    <div class="toolbar">
-      <div class="page-title">Stock View <span class="colour-badge badge-rm">● Raw Material</span></div>
-      <input class="search" id="search-rm" placeholder="Search…" oninput="renderRM()" />
-      <button class="filter-pill f-active" onclick="setStockFilter('rm','all',this)">All</button>
-      <button class="filter-pill"          onclick="setStockFilter('rm','low',this)">Low Stock</button>
-      <button class="filter-pill"          onclick="setStockFilter('rm','out',this)">Out of Stock</button>
-      <button class="btn-export-pdf"       onclick="exportPDF('Raw Material')">⬇ Export PDF</button>
-      <div class="stats-chips">
-        <span class="chip chip-ok"  id="rmStat-ok"></span>
-        <span class="chip chip-low" id="rmStat-low"></span>
-        <span class="chip chip-out" id="rmStat-out"></span>
-      </div>
-    </div>
-    <div class="grid-wrap" id="grid-rm"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
-  </div>
-
-  <!-- MASTER PAGE -->
-  <div class="page" id="page-master">
-    <div class="table-toolbar">
-      <div class="page-title" style="margin-right:8px">Master Items</div>
-      <input class="search" id="search-master" placeholder="Search name or SKU…" oninput="renderMaster()" />
-      <div class="colour-filter">
-        <button class="cf-pill active-all" onclick="setMasterColourFilter('all',this)">All</button>
-        <button class="cf-pill"            onclick="setMasterColourFilter('Green',this)"><span class="cf-dot" style="background:var(--green)"></span>Green</button>
-        <button class="cf-pill"            onclick="setMasterColourFilter('Blue',this)"><span class="cf-dot" style="background:var(--blue)"></span>Blue</button>
-        <button class="cf-pill"            onclick="setMasterColourFilter('Raw Material',this)"><span class="cf-dot" style="background:var(--rm)"></span>RM</button>
-        <button class="cf-pill"            onclick="setMasterColourFilter('Red',this)"><span class="cf-dot" style="background:var(--red)"></span>Red</button>
-        <button class="cf-pill"            onclick="setMasterColourFilter('Unknown',this)">? Unknown</button>
-      </div>
-      <span class="item-count" id="masterCount"></span>
-      <button class="btn-sm" onclick="saveSettings()">Save All</button>
-      <button class="btn-sm outline" onclick="exportCSV()">Export CSV</button>
-    </div>
-    <div class="master-legend">
-      <span style="display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:12px;height:3px;background:#f59e0b"></span>Category not yet assigned</span>
-      <span style="color:var(--faint)">|</span>
-      <span>Double-click Category to edit</span>
-      <span style="color:var(--faint)">|</span>
-      <span>Right-click type to copy · Left-click to paste/cycle</span>
-    </div>
-    <div class="table-wrap">
-      <table class="master" id="masterTable">
-        <thead>
-          <tr>
-            <th onclick="masterSort(0)">Category</th>
-            <th onclick="masterSort(1)">Item Name</th>
-            <th onclick="masterSort(2)">Type</th>
-            <th onclick="masterSort(3)">Unit</th>
-            <th onclick="masterSort(4)" style="text-align:right">Reorder<br>Level</th>
-            <th onclick="masterSort(5)" style="text-align:right" id="th-wh1">Warehouse<br>1</th>
-            <th onclick="masterSort(6)" style="text-align:right" id="th-wh2">Warehouse<br>2</th>
-            <th onclick="masterSort(7)" style="text-align:right">Total<br>Stock</th>
-          </tr>
-        </thead>
-        <tbody id="masterBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- SALES PAGE -->
-  <div class="page" id="page-sales">
-    <div class="sales-toolbar">
-      <div class="page-title">Sales</div>
-      <span class="filter-label">Unit</span>
-      <select class="sales-filter" id="salesUnitFilter" onchange="applySalesFilters()">
-        <option value="all">All Units</option>
-      </select>
-      <span class="filter-label">From</span>
-      <input type="date" class="sales-filter" id="salesFrom" onchange="applySalesFilters()" />
-      <span class="filter-label">To</span>
-      <input type="date" class="sales-filter" id="salesTo" onchange="applySalesFilters()" />
-      <button class="btn-sales-pdf" onclick="exportSalesPDF()">⬇ Export PDF</button>
-    </div>
-    <div class="sales-grand-total" id="salesGrandTotal" style="display:none">
-      <span>Total:</span>
-      <span id="sGrandQty"></span>
-      <strong id="sGrandAmt"></strong>
-    </div>
-    <div class="sales-wrap" id="salesWrap">
-      <div class="state-msg"><div class="spinner"></div><br>Loading…</div>
-    </div>
-  </div>
-
-  <!-- SETTINGS PAGE -->
-  <div class="page" id="page-settings">
-    <div class="settings-header">
-      <div class="page-title">Settings</div>
-      <button class="btn-sm" onclick="saveSettings()" style="margin-left:auto">Save All</button>
-    </div>
-    <div class="settings-wrap">
-      <div class="settings-section">
-        <div class="section-title">Category Order — drag to reorder</div>
-        <div class="cat-grid" id="settingsCatGrid"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-          <button class="add-cat-btn" onclick="addCategory()">+ Add Category</button>
-          <button class="add-cat-btn" onclick="addCombinedCategory()">+ Add Combined Group</button>
-        </div>
-      </div>
-      <div class="settings-section">
-        <div class="section-title">Combined Category Groups</div>
-        <div class="combined-groups-list" id="combinedGroupsList"></div>
-      </div>
-      <div class="settings-section">
-        <div class="section-title">User Access</div>
-        <table class="users">
-          <thead>
-            <tr>
-              <th>Email / Username</th><th>Password</th><th>Role</th><th>Warehouse Access</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="usersBody"></tbody>
-          <tfoot>
-            <tr class="new-user-row">
-              <td><input type="text" id="nu-email" placeholder="email or username" /></td>
-              <td><input type="text" id="nu-pass"  placeholder="temp password" /></td>
-              <td><select id="nu-role"><option value="user">User</option><option value="admin">Admin</option></select></td>
-              <td><select id="nu-wh"><option value="both">Both</option><option value="A">Warehouse A</option><option value="B">Warehouse B</option></select></td>
-              <td><button class="add-user-btn" onclick="addUser()">Add User</button></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
+// INIT
+(function init(){
+  const saved=sessionStorage.getItem("stockmx_session");
+  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
+  document.getElementById("loginScreen").style.display="flex";
+})();
 
 </script>
 </body>
