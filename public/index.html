@@ -502,11 +502,6 @@ async function doLogin() {
     btn.disabled = false; btn.textContent = 'Sign In';
   }
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
 
 function doLogout() {
   sessionStorage.removeItem('stockmx_session');
@@ -514,11 +509,6 @@ function doLogout() {
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('appShell').style.display = 'none';
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
 
 document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
