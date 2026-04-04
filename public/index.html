@@ -252,6 +252,7 @@ nav {
 .nav-tab.active-master { color: #fbbf24; border-bottom-color: #fbbf24; }
 .nav-tab.active-sales { color: #fb923c; border-bottom-color: #fb923c; }
 .nav-tab.active-settings { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
+.nav-tab.active-uncat { color: #9ca3af; border-bottom-color: #9ca3af; }
 
 .nav-dot {
   width: 8px;
@@ -1529,6 +1530,7 @@ table.users tbody tr:hover {
     <div class="nav-tab" onclick="showPage('master',this,'active-master')">Master</div>
     <div class="nav-tab" onclick="showPage('sales',this,'active-sales');loadSales()"><span class="nav-dot dot-sales"></span>Sales</div>
     <div class="nav-tab" onclick="showPage('settings',this,'active-settings')">Settings</div>
+    <div class="nav-tab" onclick="showPage('uncat',this,'active-uncat');renderUncat()">Uncat</div>
     <div class="nav-right">
       <span class="nav-sync" id="navSync"></span>
       <span class="nav-user" id="navUser"></span>
@@ -1713,6 +1715,20 @@ table.users tbody tr:hover {
         </table>
       </div>
     </div>
+  </div>
+
+  <!-- UNCAT PAGE -->
+  <div class="page" id="page-uncat">
+    <div class="toolbar">
+      <div class="page-title">Uncategorised Items</div>
+      <input class="search" id="search-uncat" placeholder="Search…" oninput="renderUncat()" />
+      <div class="stats-chips">
+        <span class="chip chip-ok" id="uncatStat-ok"></span>
+        <span class="chip chip-low" id="uncatStat-low"></span>
+        <span class="chip chip-out" id="uncatStat-out"></span>
+      </div>
+    </div>
+    <div class="grid-wrap" id="grid-uncat"><div class="state-msg"><div class="spinner"></div><br>Loading…</div></div>
   </div>
 
 </div>
@@ -2277,6 +2293,68 @@ function renderBlue() {
 
 function renderRM() {
   renderStockPage('Raw Material', 'grid-rm', 'search-rm', 'rmStat-ok', 'rmStat-low', 'rmStat-out');
+}
+
+function renderUncat() {
+  const search = (document.getElementById('search-uncat')?.value || '').toLowerCase();
+  
+  // Get items without category
+  const uncatItems = allItems.filter(item => {
+    const cat = getItemCategory(item);
+    if (!cat) {
+      // Also filter by search if provided
+      if (search && !item.name.toLowerCase().includes(search)) return false;
+      return true;
+    }
+    return false;
+  });
+  
+  // Update stats
+  document.getElementById('uncatStat-ok').textContent = `✓ ${uncatItems.filter(i => getItemStatus(i) === 'ok').length} ok`;
+  document.getElementById('uncatStat-low').textContent = `▲ ${uncatItems.filter(i => getItemStatus(i) === 'low').length} low`;
+  document.getElementById('uncatStat-out').textContent = `✕ ${uncatItems.filter(i => getItemStatus(i) === 'out').length} out`;
+  
+  if (!uncatItems.length) {
+    document.getElementById('grid-uncat').innerHTML = `<div class="state-msg">No uncategorised items found.</div>`;
+    return;
+  }
+  
+  // Sort items
+  uncatItems.sort((a, b) => extractSize(a.name) - extractSize(b.name));
+  
+  const whCols = warehouses.length > 0 ? warehouses : [];
+  const thCols = whCols.map(w => `<th>${esc(w.name)}</th>`).join('') + '<th>Tot</th>';
+  
+  // Render as simple list
+  const trs = uncatItems.map(item => {
+    const status = getItemStatus(item);
+    const rowClass = status === 'low' ? 'row-low' : status === 'out' ? 'row-out' : '';
+    const totalClass = status === 'ok' ? 'qty-ok' : status === 'low' ? 'qty-low' : 'qty-out';
+    const name = item.name.length > 40 ? item.name.substring(0, 40) + '...' : item.name;
+    
+    const whTds = whCols.map(w => {
+      const wh = item.warehouses.find(x => x.id === w.id);
+      const qty = wh?.stock ?? 0;
+      const qc = qty <= 0 ? 'qty-out' : (item.reorder_level && qty <= item.reorder_level) ? 'qty-low' : 'qty-ok';
+      return `<td class="${qc}">${qty}</td>`;
+    }).join('');
+    
+    return `<tr class="${rowClass}"><td title="${esc(item.name)}">${esc(name)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
+  }).join('');
+  
+  document.getElementById('grid-uncat').innerHTML = `
+    <div style="padding: 0 24px;">
+      <table class="cat-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Item Name</th>
+            ${thCols}
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 function setStockFilter(colour, val, el) {
