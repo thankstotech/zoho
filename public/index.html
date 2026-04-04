@@ -2169,10 +2169,10 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
     ...Object.keys(grouped).filter(c => !regularCats.some(rc => rc.name === c))
   ];
 
-  // Build rows with 4 columns (all regular categories)
+  // Build rows with 5 columns (all regular categories)
   const rows = [];
-  for (let i = 0; i < orderedCats.length; i += 4) {
-    rows.push(orderedCats.slice(i, i + 4));
+  for (let i = 0; i < orderedCats.length; i += 5) {
+    rows.push(orderedCats.slice(i, i + 5));
   }
 
   // Render all rows
@@ -2182,8 +2182,8 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
       return renderCatBlock(catName, catItems, hdrClass, thCols, whCols);
     });
     
-    // Fill empty slots if less than 4 categories
-    while (blocks.length < 4) {
+    // Fill empty slots if less than 5 categories
+    while (blocks.length < 5) {
       blocks.push('<div class="cat-block" style="visibility:hidden"></div>');
     }
     
