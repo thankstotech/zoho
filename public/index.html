@@ -547,6 +547,13 @@ async function startApp() {
   document.getElementById("loginScreen").style.display="flex";
 })();
 
+function updateMasterWhHeaders() {
+  const wh1 = document.getElementById('th-wh1');
+  const wh2 = document.getElementById('th-wh2');
+  if (wh1 && warehouses[0]) wh1.innerHTML = warehouses[0].name.replace(' ', '<br>');
+  if (wh2 && warehouses[1]) wh2.innerHTML = warehouses[1].name.replace(' ', '<br>');
+}
+
 // API
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-app-token': session.token };
