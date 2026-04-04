@@ -1697,20 +1697,40 @@ function exportCSV() {
 // SETTINGS
 function renderSettingsCats() {
   const grid=document.getElementById('settingsCatGrid'); if(!grid)return;
-  grid.innerHTML=(settings.categoryOrder||[]).map((cat,i)=>{
-    const isCombined = cat.combine && cat.combine.length > 0;
-    const combineLabel = isCombined ? `<span class="combine-badge">+${cat.combine.length}</span>` : '';
-    const cardClass = isCombined ? 'cat-card combined' : 'cat-card';
-    return `
-    <div class="${cardClass}" draggable="true" data-idx="${i}">
+  // Only show regular categories (not combined groups)
+  const regularCats = (settings.categoryOrder||[]).map((cat,i)=>({...cat, originalIdx: i})).filter(cat => !cat.combine);
+  grid.innerHTML=regularCats.map((cat,i)=>`
+    <div class="cat-card" draggable="true" data-idx="${cat.originalIdx}">
       <span class="drag-handle">⠿</span><span class="cat-order">${i+1}</span>
-      <span class="cat-name-text" contenteditable="true" onblur="updateCatName(${i},this.textContent)">${esc(cat.name)}</span>
-      ${combineLabel}
+      <span class="cat-name-text" contenteditable="true" onblur="updateCatName(${cat.originalIdx},this.textContent)">${esc(cat.name)}</span>
       <span class="keyword-tag">${esc(cat.keyword)}</span>
-      <button class="del-btn" onclick="deleteCat(${i})">×</button>
+      <button class="del-btn" onclick="deleteCat(${cat.originalIdx})">×</button>
+    </div>`).join('');
+  initCatDrag();
+  renderCombinedGroups();
+}
+
+function renderCombinedGroups() {
+  const list=document.getElementById('combinedGroupsList'); if(!list)return;
+  const combinedGroups = (settings.categoryOrder||[]).filter(cat => cat.combine && cat.combine.length > 0);
+  if (combinedGroups.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:10px;">No combined groups yet. Click "+ Add Combined Group" to create one.</div>';
+    return;
+  }
+  list.innerHTML = combinedGroups.map((group, idx) => {
+    const originalIdx = settings.categoryOrder.findIndex(c => c === group);
+    return `
+    <div class="combined-group-card">
+      <div class="combined-group-header">
+        <span class="combined-group-name">${esc(group.name)}</span>
+        <span class="combined-group-count">${group.combine.length} categories</span>
+        <button class="del-btn" onclick="deleteCat(${originalIdx})" style="margin-left:auto">×</button>
+      </div>
+      <div class="combined-group-cats">
+        ${group.combine.map(cat => `<span class="combined-cat-tag">${esc(cat)}</span>`).join('')}
+      </div>
     </div>`;
   }).join('');
-  initCatDrag();
 }
 
 function updateCatName(idx,val){if(settings.categoryOrder[idx])settings.categoryOrder[idx].name=val.trim();}
