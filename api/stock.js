@@ -113,11 +113,13 @@ function extractSize(name) {
 
 async function fetchFreshStockData(token, warehouses) {
   const items = await fetchAllItems(token);
+  console.log(`📊 Zoho returned ${items.length} total items`);
+  
   const whMap = {};
   warehouses.forEach(w => { whMap[w.warehouse_id] = w.warehouse_name; });
 
   const activeItems = items.filter(item => item.status === 'active');
-  console.log(`📦 Fetching fresh stock for ${activeItems.length} active items`);
+  console.log(`✅ Active items: ${activeItems.length}`);
 
   // Fetch in batches of 30 with retry logic
   const BATCH_SIZE = 30;
@@ -138,13 +140,19 @@ async function fetchFreshStockData(token, warehouses) {
     );
 
     // Separate successes and failures
+    let batchFailed = 0;
     results.forEach((result, idx) => {
       if (result) {
         detailed.push(result);
       } else {
         failed.push(batch[idx]);
+        batchFailed++;
       }
     });
+    
+    if (batchFailed > 0) {
+      console.log(`⚠️ Batch ${batchNum}: ${batchFailed}/${batch.length} items failed`);
+    }
   }
 
   // Retry failed items
@@ -180,7 +188,9 @@ async function fetchFreshStockData(token, warehouses) {
   }
 
   // Final report
-  console.log(`✅ Successfully fetched ${detailed.length}/${activeItems.length} items`);
+  console.log(`✅ Successfully fetched: ${detailed.length}`);
+  console.log(`❌ Failed permanently: ${failed.length}`);
+  console.log(`📈 Summary: ${detailed.length}/${activeItems.length} items (${((detailed.length/activeItems.length)*100).toFixed(1)}%)`);
   if (failed.length > 0) {
     console.error(`❌ PERMANENTLY FAILED (${failed.length} items):`, failed.map(f => `${f.name} (${f.item_id})`));
   }
