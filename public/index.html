@@ -212,6 +212,14 @@ tr:hover .edit-hint { opacity: 1; }
 .cat-order   { font-family: var(--mono); font-size: 10px; color: var(--faint); width: 16px; flex-shrink: 0; }
 .cat-name-text { font-size: 12px; font-weight: 500; flex: 1; }
 .keyword-tag { font-family: var(--mono); font-size: 9px; background: var(--bg); border: 1px solid var(--border); padding: 2px 5px; color: var(--muted); border-radius: 3px; }
+/* Combined Groups in Settings */
+.combined-groups-list { display: flex; flex-direction: column; gap: 8px; }
+.combined-group-card { background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%); border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px; }
+.combined-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.combined-group-name { font-size: 13px; font-weight: 600; color: #0ea5e9; }
+.combined-group-count { font-family: var(--mono); font-size: 9px; background: #0ea5e9; color: #fff; padding: 2px 6px; border-radius: 10px; }
+.combined-group-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.combined-cat-tag { font-family: var(--mono); font-size: 10px; background: var(--bg); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; color: var(--text); }
 .add-cat-btn { background: transparent; border: 1px dashed var(--border); padding: 10px 12px; font-size: 12px; color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s; font-family: var(--sans); border-radius: 4px; }
 .add-cat-btn:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
 table.users { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); font-size: 12px; }
@@ -409,6 +417,10 @@ table.users tr:last-child td { border-bottom: none; }
           <button class="add-cat-btn" onclick="addCategory()">+ Add Category</button>
           <button class="add-cat-btn" onclick="addCombinedCategory()">+ Add Combined Group</button>
         </div>
+      </div>
+      <div class="settings-section">
+        <div class="section-title">Combined Category Groups</div>
+        <div class="combined-groups-list" id="combinedGroupsList"></div>
       </div>
       <div class="settings-section">
         <div class="section-title">User Access</div>
@@ -978,6 +990,14 @@ tr:hover .edit-hint { opacity: 1; }
 .cat-order   { font-family: var(--mono); font-size: 10px; color: var(--faint); width: 16px; flex-shrink: 0; }
 .cat-name-text { font-size: 12px; font-weight: 500; flex: 1; }
 .keyword-tag { font-family: var(--mono); font-size: 9px; background: var(--bg); border: 1px solid var(--border); padding: 2px 5px; color: var(--muted); border-radius: 3px; }
+/* Combined Groups in Settings */
+.combined-groups-list { display: flex; flex-direction: column; gap: 8px; }
+.combined-group-card { background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%); border: 1px solid #0ea5e9; border-radius: 6px; padding: 12px; }
+.combined-group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.combined-group-name { font-size: 13px; font-weight: 600; color: #0ea5e9; }
+.combined-group-count { font-family: var(--mono); font-size: 9px; background: #0ea5e9; color: #fff; padding: 2px 6px; border-radius: 10px; }
+.combined-group-cats { display: flex; flex-wrap: wrap; gap: 6px; }
+.combined-cat-tag { font-family: var(--mono); font-size: 10px; background: var(--bg); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; color: var(--text); }
 .add-cat-btn { background: transparent; border: 1px dashed var(--border); padding: 10px 12px; font-size: 12px; color: var(--muted); cursor: pointer; text-align: center; transition: all 0.15s; font-family: var(--sans); border-radius: 4px; }
 .add-cat-btn:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
 table.users { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); font-size: 12px; }
@@ -1177,6 +1197,10 @@ table.users tr:last-child td { border-bottom: none; }
         </div>
       </div>
       <div class="settings-section">
+        <div class="section-title">Combined Category Groups</div>
+        <div class="combined-groups-list" id="combinedGroupsList"></div>
+      </div>
+      <div class="settings-section">
         <div class="section-title">User Access</div>
         <table class="users">
           <thead>
@@ -1350,129 +1374,6 @@ function cleanSizeLabel(item) {
   return label || item.name;
 }
 
-// STOCK GRID RENDER
-function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
-  const search = (document.getElementById(searchId)?.value || '').toLowerCase();
-  const filter = stockFilter[colour.toLowerCase()];
-
-  const items = allItems.filter(i => {
-    if (getItemColour(i) !== colour) return false;
-    const s = getItemStatus(i);
-    if (filter === 'low' && s !== 'low') return false;
-    if (filter === 'out' && s !== 'out') return false;
-    if (search && !i.name.toLowerCase().includes(search)) return false;
-    return true;
-  });
-
-  document.getElementById(statOk).textContent  = `✓ ${items.filter(i=>getItemStatus(i)==='ok').length} ok`;
-  document.getElementById(statLow).textContent = `▲ ${items.filter(i=>getItemStatus(i)==='low').length} low`;
-  document.getElementById(statOut).textContent = `✕ ${items.filter(i=>getItemStatus(i)==='out').length} out`;
-
-  if (!items.length) { document.getElementById(gridId).innerHTML = `<div class="state-msg">No items found.</div>`; return; }
-
-  // Separate combined groups from regular categories
-  const combinedGroups = (settings.categoryOrder || []).filter(c => c.combine && c.combine.length > 0);
-  const regularCats = (settings.categoryOrder || []).filter(c => !c.combine);
-  
-  const grouped = {}; const uncategorised = [];
-  items.forEach(item => {
-    const cat = getItemCategory(item);
-    if (!cat) { uncategorised.push(item); return; }
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(item);
-  });
-  Object.values(grouped).forEach(arr => arr.sort((a,b) => extractSize(a.name) - extractSize(b.name)));
-  uncategorised.sort((a,b) => extractSize(a.name) - extractSize(b.name));
-
-  const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : 'cat-header';
-  const whCols = warehouses.length > 0 ? warehouses : [];
-  const thCols = whCols.map(w=>`<th>${esc(w.name)}</th>`).join('') + '<th>Total</th>';
-
-  // Build regular categories grid (3 columns)
-  const orderedCats = [...regularCats.map(c => c.name).filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!regularCats.some(rc => rc.name === c))];
-  const regularRows = [];
-  for (let i = 0; i < orderedCats.length; i += 3) regularRows.push(orderedCats.slice(i, i+3));
-
-  const regularHtml = regularRows.map(row => `
-    <div class="cat-row">
-      ${row.map(catName => renderCatBlock(catName, grouped[catName], hdrClass, thCols, whCols)).join('')}
-    </div>`).join('');
-
-  // Build combined groups sections
-  const combinedHtml = combinedGroups.map(group => {
-    const groupItems = group.combine.map(catName => ({name: catName, items: grouped[catName] || []})).filter(g => g.items.length > 0);
-    if (groupItems.length === 0) return '';
-    
-    const totalSizes = groupItems.reduce((sum, g) => sum + g.items.length, 0);
-    const sectionsHtml = groupItems.map(g => `
-      <div class="combined-section">
-        <div class="combined-subheader">${esc(g.name)} — ${g.items.length} sizes</div>
-        <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>
-          ${g.items.map(item => renderItemRow(item, whCols)).join('')}
-        </tbody></table>
-      </div>
-    `).join('');
-    
-    return `
-      <div class="cat-row combined-row">
-        <div class="cat-block combined-block">
-          <div class="cat-header combined-header">${esc(group.name)} <span class="cat-header-count">${totalSizes} total sizes</span></div>
-          ${sectionsHtml}
-        </div>
-      </div>`;
-  }).join('');
-
-  // Uncategorised section
-  let uncategorisedHtml = '';
-  if (uncategorised.length > 0) {
-    const trs = uncategorised.map(item => renderItemRow(item, whCols)).join('');
-    uncategorisedHtml = `
-      <div class="cat-row">
-        <div class="cat-block">
-          <div class="${hdrClass}">Uncategorised <span class="cat-header-count">${uncategorised.length} items</span></div>
-          <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
-        </div>
-      </div>`;
-  }
-
-  document.getElementById(gridId).innerHTML = regularHtml + combinedHtml + uncategorisedHtml;
-}
-
-function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
-  const label = catName === '__uncat__' ? 'Uncategorised' : catName;
-  const trs = catItems.map(item => renderItemRow(item, whCols)).join('');
-  return `<div class="cat-block">
-    <div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length} size${catItems.length!==1?'s':''}</span></div>
-    <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
-  </div>`;
-}
-
-function renderItemRow(item, whCols) {
-  const status = getItemStatus(item);
-  const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
-  const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
-  const sizeLabel = cleanSizeLabel(item);
-  const whTds = whCols.map(w => {
-    const wh = item.warehouses.find(x=>x.id===w.id);
-    const qty = wh?.stock ?? 0;
-    const qc = qty<=0?'qty-out':(item.reorder_level&&qty<=item.reorder_level)?'qty-low':'qty-ok';
-    return `<td class="${qc}">${qty}</td>`;
-  }).join('');
-  return `<tr class="${rowClass}"><td>${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
-}
-
-function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
-function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue', 'bStat-ok','bStat-low','bStat-out'); }
-function renderRM()    { renderStockPage('Raw Material', 'grid-rm', 'search-rm', 'rmStat-ok','rmStat-low','rmStat-out'); }
-
-function setStockFilter(colour, val, el) {
-  stockFilter[colour] = val;
-  el.closest('.toolbar').querySelectorAll('.filter-pill').forEach(b => b.classList.remove('f-active'));
-  el.classList.add('f-active');
-  if (colour === 'green') renderGreen(); 
-  else if (colour === 'blue') renderBlue();
-  else if (colour === 'rm') renderRM();
-}
 
 // EXPORT PDF
 function exportPDF(colour) {
