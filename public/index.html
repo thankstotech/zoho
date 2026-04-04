@@ -554,6 +554,20 @@ function updateMasterWhHeaders() {
   if (wh2 && warehouses[1]) wh2.innerHTML = warehouses[1].name.replace(' ', '<br>');
 }
 
+function showPage(page, navEl, activeClass) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+  // Show selected page
+  const selectedPage = document.getElementById('page-' + page);
+  if (selectedPage) selectedPage.style.display = 'block';
+  
+  // Update nav tabs
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.remove('active-green', 'active-blue', 'active-rm', 'active-master', 'active-sales', 'active-settings');
+  });
+  if (navEl) navEl.classList.add(activeClass);
+}
+
 // API
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-app-token': session.token };
