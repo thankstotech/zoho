@@ -543,6 +543,10 @@ nav {
   background: var(--blue);
 }
 
+.cat-header.green-hdr {
+  background: var(--green);
+}
+
 .cat-header.rm-hdr {
   background: var(--purple);
 }
@@ -1994,9 +1998,9 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   Object.values(grouped).forEach(arr => arr.sort((a, b) => extractSize(a.name) - extractSize(b.name)));
   uncategorised.sort((a, b) => extractSize(a.name) - extractSize(b.name));
 
-  const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : colour === 'Raw Material' ? 'cat-header rm-hdr' : 'cat-header';
+  const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : colour === 'Raw Material' ? 'cat-header rm-hdr' : colour === 'Green' ? 'cat-header green-hdr' : 'cat-header';
   const whCols = warehouses.length > 0 ? warehouses : [];
-  const thCols = whCols.map(w => `<th>${esc(w.name.substring(0, 4))}</th>`).join('') + '<th>Tot</th>';
+  const thCols = whCols.map(w => `<th>${esc(w.name)}</th>`).join('') + '<th>Tot</th>';
 
   // Build regular categories list
   const orderedCats = [
