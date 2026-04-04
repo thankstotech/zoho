@@ -116,8 +116,14 @@ nav { background: var(--nav-bg); display: flex; align-items: center; padding: 0 
 
 /* STOCK GRID */
 .grid-wrap { padding: 18px 24px 48px; background: var(--bg); }
-.cat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px; }
+.cat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+.cat-row.combined-row { grid-template-columns: 1fr; }
 .cat-block { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.cat-block.combined-block { border-color: #0ea5e9; box-shadow: 0 2px 8px rgba(14,165,233,0.1); }
+.combined-header { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; }
+.combined-subheader { background: var(--head-bg); color: var(--text); font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; padding: 5px 10px; border-bottom: 1px solid var(--border); }
+.combined-section { margin-bottom: 8px; }
+.combined-section:last-child { margin-bottom: 0; }
 .cat-header { background: var(--nav-bg); color: #fff; font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
 .cat-header.blue-hdr { background: var(--blue); }
 .cat-header.rm-hdr   { background: var(--rm); }
@@ -189,8 +195,11 @@ tr:hover .edit-hint { opacity: 1; }
 .settings-wrap { padding: 24px; max-width: 900px; }
 .settings-section { margin-bottom: 36px; }
 .section-title { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-.cat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 10px; }
+.cat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 10px; }
 .cat-card { background: var(--surface); border: 1px solid var(--border); padding: 10px 12px; display: flex; align-items: center; gap: 8px; cursor: grab; user-select: none; transition: box-shadow 0.15s; border-radius: 4px; }
+.cat-card.combined { background: linear-gradient(135deg, #f0f9ff 0%, #fff 100%); border-color: #0ea5e9; }
+.cat-card.combined .cat-name-text { color: #0ea5e9; font-weight: 600; }
+.combine-badge { font-size: 9px; background: #0ea5e9; color: #fff; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
 .cat-card:active { cursor: grabbing; }
 .cat-card:hover  { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .cat-card.drag-over { border: 1px dashed #0ea5e9; background: #f0f9ff; }
@@ -391,7 +400,10 @@ table.users tr:last-child td { border-bottom: none; }
       <div class="settings-section">
         <div class="section-title">Category Order — drag to reorder</div>
         <div class="cat-grid" id="settingsCatGrid"></div>
-        <button class="add-cat-btn" onclick="addCategory()" style="margin-top:8px;width:100%">+ Add Category</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <button class="add-cat-btn" onclick="addCategory()">+ Add Category</button>
+          <button class="add-cat-btn" onclick="addCombinedCategory()">+ Add Combined Group</button>
+        </div>
       </div>
       <div class="settings-section">
         <div class="section-title">User Access</div>
@@ -587,7 +599,10 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   if (!items.length) { document.getElementById(gridId).innerHTML = `<div class="state-msg">No items found.</div>`; return; }
 
-  const catOrder = settings.categoryOrder?.map(c => c.name) || [];
+  // Separate combined groups from regular categories
+  const combinedGroups = (settings.categoryOrder || []).filter(c => c.combine && c.combine.length > 0);
+  const regularCats = (settings.categoryOrder || []).filter(c => !c.combine);
+  
   const grouped = {}; const uncategorised = [];
   items.forEach(item => {
     const cat = getItemCategory(item);
@@ -598,40 +613,81 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   Object.values(grouped).forEach(arr => arr.sort((a,b) => extractSize(a.name) - extractSize(b.name)));
   uncategorised.sort((a,b) => extractSize(a.name) - extractSize(b.name));
 
-  const orderedCats = [...catOrder.filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!catOrder.includes(c))];
-  const rows = [];
-  for (let i = 0; i < orderedCats.length; i += 3) rows.push(orderedCats.slice(i, i+3));
-
   const hdrClass = colour === 'Blue' ? 'cat-header blue-hdr' : 'cat-header';
+  const whCols = warehouses.length > 0 ? warehouses : [];
+  const thCols = whCols.map(w=>`<th>${esc(w.name)}</th>`).join('') + '<th>Total</th>';
 
-  const html = rows.map(row => `
+  // Build regular categories grid (3 columns)
+  const orderedCats = [...regularCats.map(c => c.name).filter(c=>grouped[c]), ...Object.keys(grouped).filter(c=>!regularCats.some(rc => rc.name === c))];
+  const regularRows = [];
+  for (let i = 0; i < orderedCats.length; i += 3) regularRows.push(orderedCats.slice(i, i+3));
+
+  const regularHtml = regularRows.map(row => `
     <div class="cat-row">
-      ${row.map(catName => {
-        const catItems = grouped[catName];
-        const label = catName === '__uncat__' ? 'Uncategorised' : catName;
-        const whCols = warehouses.length > 0 ? warehouses : [];
-        const thCols = whCols.map(w=>`<th>${esc(w.name)}</th>`).join('') + '<th>Total</th>';
-        const trs = catItems.map(item => {
-          const status = getItemStatus(item);
-          const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
-          const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
-          const sizeLabel = cleanSizeLabel(item);
-          const whTds = whCols.map(w => {
-            const wh = item.warehouses.find(x=>x.id===w.id);
-            const qty = wh?.stock ?? 0;
-            const qc = qty<=0?'qty-out':(item.reorder_level&&qty<=item.reorder_level)?'qty-low':'qty-ok';
-            return `<td class="${qc}">${qty}</td>`;
-          }).join('');
-          return `<tr class="${rowClass}"><td>${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
-        }).join('');
-        return `<div class="cat-block">
-          <div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length} size${catItems.length!==1?'s':''}</span></div>
-          <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
-        </div>`;
-      }).join('')}
+      ${row.map(catName => renderCatBlock(catName, grouped[catName], hdrClass, thCols, whCols)).join('')}
     </div>`).join('');
 
-  document.getElementById(gridId).innerHTML = html;
+  // Build combined groups sections
+  const combinedHtml = combinedGroups.map(group => {
+    const groupItems = group.combine.map(catName => ({name: catName, items: grouped[catName] || []})).filter(g => g.items.length > 0);
+    if (groupItems.length === 0) return '';
+    
+    const totalSizes = groupItems.reduce((sum, g) => sum + g.items.length, 0);
+    const sectionsHtml = groupItems.map(g => `
+      <div class="combined-section">
+        <div class="combined-subheader">${esc(g.name)} — ${g.items.length} sizes</div>
+        <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>
+          ${g.items.map(item => renderItemRow(item, whCols)).join('')}
+        </tbody></table>
+      </div>
+    `).join('');
+    
+    return `
+      <div class="cat-row combined-row">
+        <div class="cat-block combined-block">
+          <div class="cat-header combined-header">${esc(group.name)} <span class="cat-header-count">${totalSizes} total sizes</span></div>
+          ${sectionsHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  // Uncategorised section
+  let uncategorisedHtml = '';
+  if (uncategorised.length > 0) {
+    const trs = uncategorised.map(item => renderItemRow(item, whCols)).join('');
+    uncategorisedHtml = `
+      <div class="cat-row">
+        <div class="cat-block">
+          <div class="${hdrClass}">Uncategorised <span class="cat-header-count">${uncategorised.length} items</span></div>
+          <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById(gridId).innerHTML = regularHtml + combinedHtml + uncategorisedHtml;
+}
+
+function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
+  const label = catName === '__uncat__' ? 'Uncategorised' : catName;
+  const trs = catItems.map(item => renderItemRow(item, whCols)).join('');
+  return `<div class="cat-block">
+    <div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length} size${catItems.length!==1?'s':''}</span></div>
+    <table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table>
+  </div>`;
+}
+
+function renderItemRow(item, whCols) {
+  const status = getItemStatus(item);
+  const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
+  const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
+  const sizeLabel = cleanSizeLabel(item);
+  const whTds = whCols.map(w => {
+    const wh = item.warehouses.find(x=>x.id===w.id);
+    const qty = wh?.stock ?? 0;
+    const qc = qty<=0?'qty-out':(item.reorder_level&&qty<=item.reorder_level)?'qty-low':'qty-ok';
+    return `<td class="${qc}">${qty}</td>`;
+  }).join('');
+  return `<tr class="${rowClass}"><td>${esc(sizeLabel)}</td>${whTds}<td class="col-total ${totalClass}">${item.stock_on_hand}</td></tr>`;
 }
 
 function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
@@ -870,13 +926,19 @@ function exportCSV() {
 // SETTINGS
 function renderSettingsCats() {
   const grid=document.getElementById('settingsCatGrid'); if(!grid)return;
-  grid.innerHTML=(settings.categoryOrder||[]).map((cat,i)=>`
-    <div class="cat-card" draggable="true" data-idx="${i}">
+  grid.innerHTML=(settings.categoryOrder||[]).map((cat,i)=>{
+    const isCombined = cat.combine && cat.combine.length > 0;
+    const combineLabel = isCombined ? `<span class="combine-badge">+${cat.combine.length}</span>` : '';
+    const cardClass = isCombined ? 'cat-card combined' : 'cat-card';
+    return `
+    <div class="${cardClass}" draggable="true" data-idx="${i}">
       <span class="drag-handle">⠿</span><span class="cat-order">${i+1}</span>
       <span class="cat-name-text" contenteditable="true" onblur="updateCatName(${i},this.textContent)">${esc(cat.name)}</span>
+      ${combineLabel}
       <span class="keyword-tag">${esc(cat.keyword)}</span>
       <button class="del-btn" onclick="deleteCat(${i})">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   initCatDrag();
 }
 
@@ -886,6 +948,16 @@ function addCategory(){
   const name=prompt('Category name (e.g. Flange):'); if(!name)return;
   const keyword=prompt('Keyword to match in item name:',name.toLowerCase()); if(keyword===null)return;
   settings.categoryOrder.push({name:name.trim(),keyword:keyword.trim()});
+  renderSettingsCats();
+}
+
+function addCombinedCategory(){
+  const name=prompt('Combined Group name (e.g. PPRC Fittings):'); if(!name)return;
+  const categories=prompt('Enter category names to combine (comma-separated):\n(e.g. "PPRC Reducer, PPRC Reducing Tee")');
+  if(!categories)return;
+  const combineList=categories.split(',').map(c=>c.trim()).filter(c=>c);
+  if(combineList.length<2){alert('Need at least 2 categories to combine');return;}
+  settings.categoryOrder.push({name:name.trim(),keyword:combineList[0],combine:combineList});
   renderSettingsCats();
 }
 
