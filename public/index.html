@@ -2108,6 +2108,54 @@ function getPipeSortOrder(name) {
   return 9999; // Non-pipe items at end
 }
 
+// MTA/FTA SORTING - For threaded adapters
+function isMTAorFTA(item) {
+  const name = item.name || '';
+  const cat = getItemCategory(item) || '';
+  // Check if category or name contains MTA or FTA
+  return /\bMTA\b|\bFTA\b/i.test(name) || /\bMTA\b|\bFTA\b/i.test(cat);
+}
+
+function getMTAFTASortOrder(name) {
+  // Extract pipe size and thread size from patterns like "20 X 1/2" or "32 X 1"
+  const match = name.match(/(\d+)\s*X\s*(\d+(?:\/\d+)?|1\s+1\/(?:2|4)|2\s+1\/(?:2)|3|4)/i);
+  if (!match) return 9999;
+  
+  const pipeSize = parseInt(match[1]);
+  let threadSize = match[2].replace(/\s+/g, ' ').trim();
+  
+  // Convert thread size to numeric for sorting
+  const threadOrder = {
+    '1/2': 1,
+    '3/4': 2,
+    '1': 3,
+    '1 1/4': 4,
+    '1 1/2': 5,
+    '2': 6,
+    '2 1/2': 7,
+    '3': 8,
+    '4': 9
+  };
+  
+  const threadNum = threadOrder[threadSize] || 0;
+  
+  // Sort by pipe size first, then thread size
+  // Pipe size * 100 + thread order
+  return pipeSize * 100 + threadNum;
+}
+
+function getMTAFTADisplayLabel(item) {
+  const name = item.name || '';
+  // Extract the size pattern: "20 X 1/2", "32 X 1", etc.
+  const match = name.match(/(\d+)\s*X\s*(\d+(?:\/\d+)?|1\s+1\/(?:2|4)|2\s+1\/(?:2)|3|4)/i);
+  if (match) {
+    const pipeSize = match[1];
+    let threadSize = match[2].replace(/\s+/g, ' ').trim();
+    return `${pipeSize} X ${threadSize}"`;
+  }
+  return cleanSizeLabel(item);
+}
+
 function getPipeDisplayLabel(item) {
   const name = item.name || '';
   const size = extractPipeSize(name);
@@ -2190,6 +2238,20 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   
   Object.values(grouped).forEach(arr => {
     arr.sort((a, b) => {
+      // Check if both are MTA/FTA items
+      const aIsMTAFTA = isMTAorFTA(a);
+      const bIsMTAFTA = isMTAorFTA(b);
+      
+      if (aIsMTAFTA && bIsMTAFTA) {
+        // Both are MTA/FTA - use special sort order
+        return getMTAFTASortOrder(a.name) - getMTAFTASortOrder(b.name);
+      } else if (aIsMTAFTA) {
+        // MTA/FTA items come before regular items
+        return -1;
+      } else if (bIsMTAFTA) {
+        return 1;
+      }
+      
       // Check if both are pipe items
       const aIsPipe = isPipeItem(a);
       const bIsPipe = isPipeItem(b);
@@ -2211,6 +2273,17 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   });
   
   uncategorised.sort((a, b) => {
+    const aIsMTAFTA = isMTAorFTA(a);
+    const bIsMTAFTA = isMTAorFTA(b);
+    
+    if (aIsMTAFTA && bIsMTAFTA) {
+      return getMTAFTASortOrder(a.name) - getMTAFTASortOrder(b.name);
+    } else if (aIsMTAFTA) {
+      return -1;
+    } else if (bIsMTAFTA) {
+      return 1;
+    }
+    
     const aIsPipe = isPipeItem(a);
     const bIsPipe = isPipeItem(b);
     
@@ -2274,6 +2347,9 @@ function renderItemRow(item, whCols) {
   let sizeLabel;
   if (isPipeItem(item)) {
     sizeLabel = getPipeDisplayLabel(item);
+  } else if (isMTAorFTA(item)) {
+    // MTA/FTA items - show size like "20 X 1/2"
+    sizeLabel = getMTAFTADisplayLabel(item);
   } else {
     // Check if it's a flange item
     const flangeLabel = getFlangeDisplayLabel(item);
