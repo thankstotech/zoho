@@ -721,6 +721,8 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   document.getElementById(gridId).innerHTML = html;
 }
+
+function extractSizeFromName(name, categories) {
   let sizePart = name;
   // Remove category names
   categories.forEach(cat => {
@@ -731,6 +733,8 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   sizePart = sizePart.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
   return sizePart || name;
 }
+
+function renderCombinedBlock(combinedData, whCols) {
   const { name, combineCats, sizes } = combinedData;
   const shortNames = combineCats.map(c => c.replace('PPRC ', '').replace('Reducing ', 'R.').substring(0, 12));
   
@@ -750,10 +754,14 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   
   return `<div class="cat-block combined-block"><div class="cat-header combined-header">${esc(name)} <span class="cat-header-count">${sizes.length} sizes</span></div><table class="comparison-table"><thead><tr>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
+
+function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
   const label = catName === '__uncat__' ? 'Uncat' : catName.substring(0, 18);
   const trs = catItems.map(item => renderItemRow(item, whCols)).join('');
   return `<div class="cat-block"><div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length}</span></div><table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
+
+function renderItemRow(item, whCols) {
   const status = getItemStatus(item);
   const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
   const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
