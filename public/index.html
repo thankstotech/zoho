@@ -37,44 +37,16 @@
   --mono: 'DM Mono', monospace;
   --sans: 'Inter', sans-serif;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); font-family: var(--sans); color: var(--text); min-height: 100vh; }
 
 /* LOGIN */
 #loginScreen {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 100%);
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-.login-box {
-  background: #fff; border: 1px solid var(--border);
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
   padding: 40px 36px; width: 340px; border-radius: 8px;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-.login-brand {
-  font-family: var(--mono); font-size: 13px; color: var(--nav-bg); letter-spacing: 0.18em; margin-bottom: 32px;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-.login-brand span { color: #0ea5e9; }
-.login-field { margin-bottom: 16px; }
 .login-field label { display: block; font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; }
 .login-field input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: var(--mono); font-size: 13px; padding: 10px 12px; outline: none; border-radius: 4px; transition: border-color 0.2s; }
 .login-field input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
@@ -524,13 +496,6 @@ async function startApp() {
   // Ensure the default landing page (Green) renders correctly with full state
   renderGreen();
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function updateMasterWhHeaders() {
   const wh1 = document.getElementById('th-wh1');
   const wh2 = document.getElementById('th-wh2');
   if (wh1 && warehouses[0]) wh1.innerHTML = warehouses[0].name.replace(' ', '<br>');
@@ -555,13 +520,6 @@ function showPage(page, navEl, activeClass) {
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-app-token': session.token };
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function showSkeleton() {
   const s = `<div class="skeleton-grid">${[0,1,2].map(()=>`<div class="skeleton-block"><div class="skeleton-hdr"></div>${[0,1,2,3,4].map(()=>`<div class="skeleton-row"></div>`).join('')}</div>`).join('')}</div>`;
   if (!allItems.length) { 
     document.getElementById('grid-green').innerHTML = s; 
@@ -569,13 +527,6 @@ function showSkeleton() {
     document.getElementById('grid-rm').innerHTML = s;
   }
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-async function loadStock() {
   if (allItems.length) {
     renderGreen(); renderBlue(); renderRM(); renderMaster();
     document.getElementById('navSync').textContent = 'refreshing…';
@@ -601,52 +552,24 @@ async function loadStock() {
     }
   }
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-async function loadSettings() {
   try {
     const res = await fetch('/api/settings?action=get-settings', { headers: authHeaders() });
     settings = await res.json();
     renderSettingsCats();
   } catch {}
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-async function loadUsers() {
   try {
     const res = await fetch('/api/settings?action=get-users', { headers: authHeaders() });
     users = await res.json();
     renderUsers();
   } catch {}
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-async function saveSettings() {
   try {
     await fetch('/api/settings?action=save-settings', { method: 'POST', headers: authHeaders(), body: JSON.stringify(settings) });
     await fetch('/api/settings?action=save-users',    { method: 'POST', headers: authHeaders(), body: JSON.stringify({ users }) });
     alert('Settings saved!');
   } catch (e) { alert('Save failed: ' + e.message); }
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-// HELPERS
 const TYPES = ['Green','Blue','Raw Material','Red','Unknown'];
 const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', 'Raw Material':'pill-rm', Red:'pill-red', Unknown:'pill-unknown' };
 const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', 'Raw Material':'#a855f7', Red:'#991b1b', Unknown:'#6b7280' };
@@ -659,13 +582,6 @@ function getItemStatus(item) {
   if (item.reorder_level && t <= item.reorder_level) return 'low';
   return 'ok';
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-function extractSize(name) { const m = name.match(/(\d+(?:\.\d+)?)\s*mm/i); return m ? parseFloat(m[1]) : 9999; }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function cleanSizeLabel(item) {
   const catKeyword = (settings.categoryOrder?.find(c => c.name === getItemCategory(item))?.keyword) || getItemCategory(item) || '';
@@ -676,13 +592,6 @@ function cleanSizeLabel(item) {
   label = label.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
   return label || item.name;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-// STOCK GRID RENDER - 4 columns: 3 regular + 1 combined
 function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
   const search = (document.getElementById(searchId)?.value || '').toLowerCase();
   const filter = stockFilter[colour.toLowerCase()];
@@ -799,13 +708,6 @@ function renderStockPage(colour, gridId, searchId, statOk, statLow, statOut) {
 
   document.getElementById(gridId).innerHTML = html;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function extractSizeFromName(name, categories) {
   let sizePart = name;
   // Remove category names
   categories.forEach(cat => {
@@ -816,13 +718,6 @@ function extractSizeFromName(name, categories) {
   sizePart = sizePart.replace(/^[\s\-]+|[\s\-]+$/g, '').replace(/\s{2,}/g, ' ').trim();
   return sizePart || name;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function renderCombinedBlock(combinedData, whCols) {
   const { name, combineCats, sizes } = combinedData;
   const shortNames = combineCats.map(c => c.replace('PPRC ', '').replace('Reducing ', 'R.').substring(0, 12));
   
@@ -842,24 +737,10 @@ function renderCombinedBlock(combinedData, whCols) {
   
   return `<div class="cat-block combined-block"><div class="cat-header combined-header">${esc(name)} <span class="cat-header-count">${sizes.length} sizes</span></div><table class="comparison-table"><thead><tr>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function renderCatBlock(catName, catItems, hdrClass, thCols, whCols) {
   const label = catName === '__uncat__' ? 'Uncat' : catName.substring(0, 18);
   const trs = catItems.map(item => renderItemRow(item, whCols)).join('');
   return `<div class="cat-block"><div class="${hdrClass}">${esc(label)} <span class="cat-header-count">${catItems.length}</span></div><table class="cat-table"><thead><tr><th>Size</th>${thCols}</tr></thead><tbody>${trs}</tbody></table></div>`;
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function renderItemRow(item, whCols) {
   const status = getItemStatus(item);
   const rowClass = status==='low'?'row-low':status==='out'?'row-out':'';
   const totalClass = status==='ok'?'qty-ok':status==='low'?'qty-low':'qty-out';
@@ -1190,13 +1071,6 @@ function startEditCat(spanEl, itemId) {
     if (e.key === 'Escape') renderMaster();
   });
 }
-// INIT
-  const saved=sessionStorage.getItem("stockmx_session");
-  if(saved){try{session=JSON.parse(saved);startApp();return;}catch{}}
-  document.getElementById("loginScreen").style.display="flex";
-})();
-
-function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
 function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue','bStat-ok','bStat-low','bStat-out'); }
 function renderRM()    { renderStockPage('Raw Material', 'grid-rm', 'search-rm', 'rmStat-ok','rmStat-low','rmStat-out'); }
 
