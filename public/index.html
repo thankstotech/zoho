@@ -2291,27 +2291,44 @@ function cycleType(itemId) {
 
 function startEditCat(spanEl, itemId) {
   const item = allItems.find(i => i.item_id === itemId);
-  const input = document.createElement('input');
-  input.className = 'cat-input';
-  input.value = getItemCategory(item) || '';
-  input.placeholder = 'e.g. Coupling';
-  spanEl.replaceWith(input);
-  input.focus();
-  input.select();
+  const currentCat = getItemCategory(item) || '';
+  
+  // Create select dropdown
+  const select = document.createElement('select');
+  select.className = 'cat-input';
+  
+  // Add empty option
+  const emptyOption = document.createElement('option');
+  emptyOption.value = '';
+  emptyOption.textContent = '—';
+  select.appendChild(emptyOption);
+  
+  // Add all categories from settings
+  (settings.categoryOrder || []).forEach(cat => {
+    if (!cat.combine) { // Only regular categories, not combined groups
+      const option = document.createElement('option');
+      option.value = cat.name;
+      option.textContent = cat.name;
+      if (cat.name === currentCat) option.selected = true;
+      select.appendChild(option);
+    }
+  });
+  
+  spanEl.replaceWith(select);
+  select.focus();
   
   const commit = () => {
-    const val = input.value.trim();
+    const val = select.value;
     if (!settings.itemOverrides) settings.itemOverrides = {};
     settings.itemOverrides[itemId] = { ...(settings.itemOverrides[itemId] || {}), category: val };
     renderMaster();
   };
   
-  input.addEventListener('blur', commit);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      input.blur();
-    }
+  select.addEventListener('blur', commit);
+  select.addEventListener('change', () => {
+    select.blur();
+  });
+  select.addEventListener('keydown', e => {
     if (e.key === 'Escape') renderMaster();
   });
 }
