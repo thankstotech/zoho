@@ -593,6 +593,8 @@ function extractSize(name) {
   return m ? parseFloat(m[1]) : 9999;
 }
 
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 function getItemColour(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.colour || item.colour; }
 function getItemCategory(item) { const ov = settings.itemOverrides?.[item.item_id]; return ov?.category !== undefined ? ov.category : item.category; }
 function getItemStatus(item) {
