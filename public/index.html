@@ -496,6 +496,8 @@ async function startApp() {
   // Ensure the default landing page (Green) renders correctly with full state
   renderGreen();
 }
+
+function updateMasterWhHeaders() {
   const wh1 = document.getElementById('th-wh1');
   const wh2 = document.getElementById('th-wh2');
   if (wh1 && warehouses[0]) wh1.innerHTML = warehouses[0].name.replace(' ', '<br>');
@@ -520,6 +522,8 @@ function showPage(page, navEl, activeClass) {
 function authHeaders() {
   return { 'Content-Type': 'application/json', 'x-app-token': session.token };
 }
+
+function showSkeleton() {
   const s = `<div class="skeleton-grid">${[0,1,2].map(()=>`<div class="skeleton-block"><div class="skeleton-hdr"></div>${[0,1,2,3,4].map(()=>`<div class="skeleton-row"></div>`).join('')}</div>`).join('')}</div>`;
   if (!allItems.length) { 
     document.getElementById('grid-green').innerHTML = s; 
@@ -527,6 +531,8 @@ function authHeaders() {
     document.getElementById('grid-rm').innerHTML = s;
   }
 }
+
+async function loadStock() {
   if (allItems.length) {
     renderGreen(); renderBlue(); renderRM(); renderMaster();
     document.getElementById('navSync').textContent = 'refreshing…';
@@ -552,24 +558,31 @@ function authHeaders() {
     }
   }
 }
+
+async function loadSettings() {
   try {
     const res = await fetch('/api/settings?action=get-settings', { headers: authHeaders() });
     settings = await res.json();
     renderSettingsCats();
   } catch {}
 }
+
+async function loadUsers() {
   try {
     const res = await fetch('/api/settings?action=get-users', { headers: authHeaders() });
     users = await res.json();
     renderUsers();
   } catch {}
 }
+
+async function saveSettings() {
   try {
     await fetch('/api/settings?action=save-settings', { method: 'POST', headers: authHeaders(), body: JSON.stringify(settings) });
     await fetch('/api/settings?action=save-users',    { method: 'POST', headers: authHeaders(), body: JSON.stringify({ users }) });
     alert('Settings saved!');
   } catch (e) { alert('Save failed: ' + e.message); }
 }
+
 const TYPES = ['Green','Blue','Raw Material','Red','Unknown'];
 const PILL_CLASS = { Green:'pill-green', Blue:'pill-blue', 'Raw Material':'pill-rm', Red:'pill-red', Unknown:'pill-unknown' };
 const PILL_DOT   = { Green:'#166534', Blue:'#1e40af', 'Raw Material':'#a855f7', Red:'#991b1b', Unknown:'#6b7280' };
@@ -1071,6 +1084,7 @@ function startEditCat(spanEl, itemId) {
     if (e.key === 'Escape') renderMaster();
   });
 }
+function renderGreen() { renderStockPage('Green','grid-green','search-green','gStat-ok','gStat-low','gStat-out'); }
 function renderBlue()  { renderStockPage('Blue', 'grid-blue', 'search-blue','bStat-ok','bStat-low','bStat-out'); }
 function renderRM()    { renderStockPage('Raw Material', 'grid-rm', 'search-rm', 'rmStat-ok','rmStat-low','rmStat-out'); }
 
