@@ -57,7 +57,7 @@ async function fetchInvoicesForDateRange(token, fromDate, toDate) {
 
   while (true) {
     const url = `https://www.zohoapis.in/books/v3/invoices?organization_id=${ZOHO_ORG_ID}` +
-      `&date_from=${fromDate}&date_to=${toDate}&page=${page}&per_page=200&sort_order=desc`;
+      `&date_from=${fromDate}&date_to=${toDate}&page=${page}&per_page=200&sort_order=D`;
     
     console.log(`   Fetching page ${page}...`);
     
