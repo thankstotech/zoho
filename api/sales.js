@@ -12,6 +12,7 @@ const ZOHO_ORG_ID = process.env.ZOHO_ORG_ID;
 const APP_SECRET = process.env.APP_SECRET;
 
 function getAccessToken() {
+  console.log('🔑 Refreshing Zoho access token...');
   return fetch('https://accounts.zoho.in/oauth/v2/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -22,7 +23,11 @@ function getAccessToken() {
       refresh_token: ZOHO_REFRESH_TOKEN,
     }),
   }).then(r => r.json()).then(d => {
-    if (!d.access_token) throw new Error('Token refresh failed: ' + JSON.stringify(d));
+    if (!d.access_token) {
+      console.error('❌ Token refresh failed:', d);
+      throw new Error('Token refresh failed: ' + JSON.stringify(d));
+    }
+    console.log('✓ Access token obtained');
     return d.access_token;
   });
 }
@@ -43,27 +48,55 @@ function checkAuth(req) {
 
 // Fetch invoices for a date range
 async function fetchInvoicesForDateRange(token, fromDate, toDate) {
+  console.log('📡 Fetching invoices from Zoho Books...');
+  console.log('   Date range:', fromDate, 'to', toDate);
+  console.log('   Org ID:', ZOHO_ORG_ID);
+  
   const all = [];
   let page = 1;
 
   while (true) {
-    const res = await fetch(
-      `https://www.zohoapis.in/books/v3/invoices?organization_id=${ZOHO_ORG_ID}` +
-      `&date_from=${fromDate}&date_to=${toDate}&page=${page}&per_page=200&sort_order=desc`,
-      { headers: { Authorization: `Zoho-oauthtoken ${token}` } }
-    );
+    const url = `https://www.zohoapis.in/books/v3/invoices?organization_id=${ZOHO_ORG_ID}` +
+      `&date_from=${fromDate}&date_to=${toDate}&page=${page}&per_page=200&sort_order=desc`;
+    
+    console.log(`   Fetching page ${page}...`);
+    
+    const res = await fetch(url, {
+      headers: { Authorization: `Zoho-oauthtoken ${token}` }
+    });
+    
     const data = await res.json();
+    
+    if (!res.ok) {
+      console.error('❌ Zoho API Error:', {
+        status: res.status,
+        statusText: res.statusText,
+        response: data
+      });
+      throw new Error(`Zoho API failed: ${res.status} - ${JSON.stringify(data)}`);
+    }
+    
     const invoices = data.invoices || [];
+    console.log(`   Page ${page}: ${invoices.length} invoices`);
+    
     all.push(...invoices);
-    if (!data.page_context?.has_more_page) break;
+    
+    if (!data.page_context?.has_more_page) {
+      console.log(`✓ Fetched ${all.length} total invoices`);
+      break;
+    }
     page++;
   }
 
   // Fetch full invoice details in batches
+  console.log('📦 Fetching full invoice details...');
   const BATCH = 20;
   const enriched = [];
+  
   for (let i = 0; i < all.length; i += BATCH) {
     const batch = all.slice(i, i + BATCH);
+    console.log(`   Batch ${Math.floor(i/BATCH) + 1}: ${batch.length} invoices`);
+    
     const items = await Promise.all(
       batch.map(inv =>
         fetch(
@@ -74,12 +107,15 @@ async function fetchInvoicesForDateRange(token, fromDate, toDate) {
     );
     enriched.push(...items.filter(Boolean));
   }
+  
+  console.log(`✓ Enriched ${enriched.length} invoices with full details`);
 
   return enriched;
 }
 
 // Process invoices into daily structure
 function processDailyData(invoices) {
+  console.log('⚙️  Processing invoice data...');
   const dailyData = {}; // { 'YYYY-MM-DD': { date, rows[], totals } }
 
   for (const inv of invoices) {
@@ -138,11 +174,15 @@ function processDailyData(invoices) {
       year: 'numeric',
     });
   }
+  
+  console.log(`✓ Processed ${Object.keys(dailyData).length} days of data`);
 
   return dailyData;
 }
 
 export default async function handler(req, res) {
+  console.log('🚀 Sales API called:', req.method, req.url);
+  
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'x-app-token');
@@ -150,10 +190,17 @@ export default async function handler(req, res) {
 
   try {
     const user = checkAuth(req);
-    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+    if (!user) {
+      console.log('❌ Auth failed - no valid token');
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    console.log('✓ Auth OK:', user.email);
 
     const DAYS_TO_SHOW = 30; // Last 30 days
     const today = new Date().toISOString().split('T')[0];
+    
+    console.log('📅 Today:', today);
     
     // Generate list of dates to fetch (last 30 days)
     const dates = [];
@@ -162,6 +209,8 @@ export default async function handler(req, res) {
       d.setDate(d.getDate() - i);
       dates.push(d.toISOString().split('T')[0]);
     }
+    
+    console.log('📅 Date range:', dates[dates.length - 1], 'to', dates[0]);
 
     // Check cache for each date
     const cachedDays = {};
@@ -192,17 +241,31 @@ export default async function handler(req, res) {
         }
       }
     }
+    
+    console.log('💾 Cache stats:');
+    console.log('   Cached dates:', Object.keys(cachedDays).length);
+    console.log('   Missing dates:', missingDates.length);
 
     // Fetch missing dates from Zoho
     if (missingDates.length > 0) {
       const fromDate = missingDates[missingDates.length - 1]; // Oldest
       const toDate = missingDates[0]; // Newest
       
+      console.log('🔄 Need to fetch from Zoho:', { fromDate, toDate, count: missingDates.length });
+      
       const token = await getAccessToken();
       const invoices = await fetchInvoicesForDateRange(token, fromDate, toDate);
+      
+      if (invoices.length === 0) {
+        console.log('⚠️  No invoices returned from Zoho!');
+      } else {
+        console.log('📄 Sample invoice:', JSON.stringify(invoices[0], null, 2).substring(0, 500) + '...');
+      }
+      
       const dailyData = processDailyData(invoices);
 
       // Cache each day
+      console.log('💾 Caching results...');
       for (const date of missingDates) {
         const dayData = dailyData[date] || {
           date,
@@ -227,6 +290,7 @@ export default async function handler(req, res) {
         
         cachedDays[date] = dayData;
       }
+      console.log('✓ Cache updated');
     }
 
     // Build response (dates sorted newest first)
@@ -237,6 +301,9 @@ export default async function handler(req, res) {
         ...day,
         isToday: day.date === today,
       }));
+    
+    console.log('📊 Returning', days.length, 'days of data');
+    console.log('✅ Request complete');
 
     res.setHeader('Cache-Control', 'public, s-maxage=900, stale-while-revalidate=1800');
     res.status(200).json({
@@ -245,7 +312,8 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
-    console.error('Sales API Error:', e);
+    console.error('💥 Sales API Error:', e);
+    console.error('Stack:', e.stack);
     res.status(500).json({ error: e.message });
   }
 }
